@@ -42,17 +42,18 @@ def process_video(topic, index):
 
 
 def main():
-    
     topics = generate_topics()
 
     if not topics:
         topics = ["Tin nóng thị trường"]
 
-    topics = topics[:1]  # chạy 1 video
+    main_topic = topics[0]
 
-    for i, topic in enumerate(topics):
+    variations = generate_variations_local(main_topic)
+    variations = variations[:2]  # chạy 2 video
+
+    for i, topic in enumerate(variations):
         process_video(topic, i)
-
 
 if __name__ == "__main__":
     main()
