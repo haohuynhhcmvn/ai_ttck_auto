@@ -10,7 +10,7 @@ def generate_topics():
 
     prompt = "Tạo 10 topic viral về chứng khoán Việt Nam"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview-flash:generateContent?key={API_KEY}"
 
     res = requests.post(url, json={
         "contents": [{"parts": [{"text": prompt}]}]
