@@ -5,34 +5,55 @@
 
 import requests
 import os
+from datetime import datetime
 
+# Lấy API KEY từ biến môi trường
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 def generate_script(topic):
-    prompt = f""" 
-        Bạn là một Chuyên gia Phân tích Chiến lược Chứng khoán cấp cao với khả năng "đọc vị" thị trường và tâm lý đám đông. Nhiệm vụ của bạn là viết một đoạn lời thoại (Voiceover) 30 giây cực kỳ lôi cuốn cho video ngắn về chủ đề: "{topic}".
-        
-        # YÊU CẦU VỀ VĂN PHONG (CHỨNG KHOÁN)
-        - **Giọng điệu:** Quyết đoán, chuyên nghiệp, mang tính "tiết lộ bí mật" hoặc "cảnh báo khẩn cấp".
-        - **Ngôn ngữ:** Sử dụng linh hoạt các thuật ngữ chứng khoán (như: FOMO, thanh khoản, đu đỉnh, cắt lỗ, cá mập, gom hàng...) một cách tự nhiên.
-        - **Nhịp điệu:** Nhanh, dồn dập ở phần đầu (tạo sự kịch tính) và chậm lại, chắc chắn ở phần đưa ra giải pháp.
-        
-        # CẤU TRÚC LỜI THOẠI (STRICTLY VOICEOVER ONLY)
-        Văn bản trả về phải là một đoạn nói liền mạch, không có ký hiệu kịch bản, bao gồm 3 phần:
-        
-        1.  **THE HOOK (Cú tát thị trường):** Đánh thẳng vào một sai lầm chết người mà số đông đang mắc phải hoặc một cơ hội sắp trôi qua. (Ví dụ: "Bạn đang vui mừng vì mã này tím? Coi chừng, đó là cái bẫy!")
-        2.  **THE INSIGHT (Góc nhìn chuyên gia):** Giải mã "game" của đội lái hoặc đưa ra một chỉ số kỹ thuật/vĩ mô cực kỳ quan trọng về {topic} mà ít người để ý.
-        3.  **THE CALL (Hành động):** Lời kêu gọi mang tính đặc quyền. (Ví dụ: "Đừng để bị 'thịt' thêm lần nào nữa. Click vào bio xem danh mục siêu cổ phiếu tuần tới của mình.")
-        
-        # RÀNG BUỘC ĐẦU RA
-        - Chỉ trả về DUY NHẤT lời thoại để đọc, không giải thích, không thêm ký hiệu [Cảnh], không dùng hashtag.
-        - Độ dài: 80 - 100 chữ (vừa đủ cho 30 giây nói tốc độ trung bình).
+    # Tự động lấy ngày hiện tại định dạng DD/MM/YYYY
+    today = datetime.now().strftime("%d/%m/%Y")
+    
+    # Prompt chuyên sâu cho Bản tin Chứng khoán hàng ngày
+    prompt = f"""
+Bạn là một Biên tập viên Bản tin Tài chính cấp cao. Hãy viết một đoạn lời thoại (Voiceover) 120 giây cho bản tin chứng khoán ngày {today} về chủ đề: "{topic}".
+
+# YÊU CẦU VỀ PHONG CÁCH
+- **Mở đầu:** Phải có tên bản tin (Ví dụ: Nhịp đập thị trường, Chứng khoán 24h).
+- **Văn phong:** Tin tức, dồn dập, khách quan nhưng sắc sảo. Tốc độ đọc chuyên nghiệp.
+- **Ngôn ngữ:** Sử dụng thuật ngữ: VN-Index, thanh khoản, khối ngoại, tự doanh, bùng nổ, lội ngược dòng...
+
+# CẤU TRÚC LỜI THOẠI (STRICTLY VOICEOVER ONLY)
+Văn bản trả về là một đoạn nói liền mạch, không chia cảnh, không ký hiệu, bao gồm:
+1. Chào sân & Cập nhật chỉ số VN-Index của ngày {today}.
+2. Điểm nhấn ngành nóng nhất trong phiên liên quan đến {topic}.
+3. Lời khuyên hành động/Chiến lược cho phiên giao dịch kế tiếp.
+4. Câu chốt thương hiệu và kêu gọi hành động (CTA).
+
+# RÀNG BUỘC ĐẦU RA
+- Chỉ trả về DUY NHẤT lời thoại để đọc.
+- Không dùng ký hiệu [Cảnh], không giải thích, không hashtag.
+- Độ dài: Khoảng 250 - 300 chữ (tối ưu cho 120-140 giây nói).
 """
 
+    # URL API (Sử dụng model gemini-1.5-flash để ổn định nhất hiện tại)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
-    res = requests.post(url, json={
-        "contents": [{"parts": [{"text": prompt}]}]
-    })
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.7,  # Giúp lời thoại sáng tạo nhưng vẫn chuẩn mực
+            "topP": 0.8,
+            "topK": 40
+        }
+    }
 
-    return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+    try:
+        res = requests.post(url, json=payload)
+        res.raise_for_status() # Kiểm tra lỗi HTTP
+        
+        # Trích xuất văn bản từ phản hồi của Gemini
+        script = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return script
+    except Exception as e:
+        return f"Đã xảy ra lỗi khi tạo kịch bản: {e}"
