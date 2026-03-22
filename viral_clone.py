@@ -5,14 +5,16 @@
 
 import requests
 import os
+import random
 
-# API_KEY = os.getenv("GEMINI_API_KEY")
-
-def generate_variations_local(topic):
-    return [
-        topic,
-        f"{topic} - cơ hội lớn",
-        f"{topic} - cảnh báo quan trọng",
-        f"{topic} - điều ít ai biết",
-        f"{topic} - sai lầm nhiều người mắc"
+def generate_variations(topic):
+    templates = [
+        "{} - cơ hội lớn ít ai thấy",
+        "{} - cảnh báo quan trọng",
+        "{} - điều 90% F0 không biết",
+        "{} - bạn đang làm sai điều này",
+        "{} - tín hiệu trước khi tăng mạnh",
+        "{} - dấu hiệu sắp sập?"
     ]
+
+    return [topic] + [t.format(topic) for t in random.sample(templates, 3)]
