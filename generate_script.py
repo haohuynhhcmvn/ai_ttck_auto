@@ -37,7 +37,7 @@ Văn bản trả về là một đoạn nói liền mạch, không chia cảnh, 
 """
 
     # URL API (Sử dụng model gemini-1.5-flash để ổn định nhất hiện tại)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
