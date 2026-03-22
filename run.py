@@ -34,12 +34,16 @@ def process_video(topic, index):
     output = f"output_{index}.mp4"
     render_video(audio, subs, output)  # render video
     
-    print(f"6. Upload youtube")
-    #url = upload_video(output)       # upload youtube
+    print("6. Upload youtube")
+    try:
+        url = upload_video(output)
+    except:
+        url = "Upload lỗi"
+
 
     print(f"7. Gửi telegram")
     send_message(f"🔥 {topic}\n{url}")  # gửi telegram
-
+    send_video(output)
 
 def main():
     topics = generate_topics()
