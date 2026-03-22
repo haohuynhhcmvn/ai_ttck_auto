@@ -46,7 +46,7 @@ def main():
     main_topic = pick_best_topic(topics)       # chọn topic tốt nhất
 
     variations = generate_variations(main_topic)  # clone topic
-    variations = variations[:3]               # giới hạn để tránh timeout
+    variations = variations[:1]               # giới hạn để tránh timeout
 
     for i, topic in enumerate(variations):
         process_video(topic, i)
