@@ -18,19 +18,26 @@ from telegram import send_message                       # gửi telegram
 def process_video(topic, index):
     print(f"Processing video {index}: {topic}")
 
+    print(f"1. AI viết nội dung")
     script = generate_script(topic)  # AI viết nội dung
 
+    print(f"2. Tạo audio")
     audio = text_to_speech(script)   # tạo audio
 
+    print(f"3. Timestamp từng từ")
     words = transcribe(audio)        # timestamp từng từ
 
+    print(f"4. Tạo subtitle")
     subs = create_subtitles(words)   # tạo subtitle
 
+    print(f"5. Render video")   
     output = f"output_{index}.mp4"
     render_video(audio, subs, output)  # render video
-
+    
+    print(f"6. Upload youtube")
     url = upload_video(output)       # upload youtube
 
+    print(f"7. Gửi telegram")
     send_message(f"🔥 {topic}\n{url}")  # gửi telegram
 
 
