@@ -18,4 +18,8 @@ def generate_variations(topic):
     })
 
     text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-    return [t for t in text.split("\n") if len(t) > 10]
+    return [
+    t.strip("- ").strip()
+    for t in text.split("\n")
+    if len(t.strip()) > 10 and "Tuyệt vời" not in t
+    ]
