@@ -35,10 +35,10 @@ def process_video(topic, index):
     render_video(audio, subs, output)  # render video
     
     print(f"6. Upload youtube")
-    url = upload_video(output)       # upload youtube
+    #url = upload_video(output)       # upload youtube
 
     print(f"7. Gửi telegram")
-    send_message(f"🔥 {topic}\n{url}")  # gửi telegram
+    #send_message(f"🔥 {topic}\n{url}")  # gửi telegram
 
 
 def main():
