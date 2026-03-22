@@ -1,9 +1,8 @@
-
 name: Auto Video
 
 on:
-  #schedule:
-  #  - cron: "0 */6 * * *"
+  # schedule:
+  #   - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,24 +12,28 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      # 1. Setup Python tích hợp sẵn Caching cho pip
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+          cache: 'pip' # Tự động cache các thư viện dựa trên requirements.txt
 
+      # 2. Cài đặt System Deps nhanh hơn (Gộp lệnh & No-recommends)
       - name: Install system deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick fonts-dejavu-core
-      
-      - name: Fix ImageMagick policy
-        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg imagemagick fonts-dejavu-core --no-install-recommends
+          # Fix policy ngay trong cùng 1 step để tiết kiệm thời gian khởi tạo step mới
           sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
-      
+
+      # 3. Cài đặt Python deps (Sử dụng cache đã setup ở bước 1)
       - name: Install Python deps
         run: |
-          pip install --upgrade pip
+          # Chỉ cài đặt, không cần upgrade pip nếu không cần thiết
           pip install -r requirements.txt
-   
+
+      # 4. Chạy script
       - name: Run
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -38,8 +41,11 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python run.py
 
+      # 5. Upload video (Nén nhanh)
       - name: Upload video artifact
         uses: actions/upload-artifact@v4
+        if: always() # Luôn chạy kể cả khi script lỗi để xem kết quả
         with:
           name: video-output
           path: output_*.mp4
+          retention-days: 1 # Chỉ giữ 1 ngày để tiết kiệm dung lượng lưu trữ
