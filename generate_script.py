@@ -10,29 +10,24 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 def generate_script(topic):
     prompt = f""" 
-        Bạn là một Giám đốc Sáng tạo (Creative Director) chuyên về nội dung ngắn Viral trên nền tảng TikTok, Reels & Shorts, có hiểu biết sâu sắc về tâm lý đám đông và thuật toán phân phối nội dung năm 2026. Nhiệm vụ của bạn là viết một kịch bản video TikTok 30 giây bùng nổ về chủ đề: "{topic}".
-        # TARGET AUDIENCE
-        - Nhóm đối tượng: Gen Z & Millennials trẻ, bận rộn, lướt nhanh, thích sự thực tế, hài hước hoặc thông tin cực sốc (edutainment).
-        - Nỗi đau (Pain point) liên quan đến chủ đề: {topic} (Ví dụ: thiếu thời gian, sợ bị lừa, không biết bắt đầu từ đâu...).
+        Bạn là một Chuyên gia Phân tích Chiến lược Chứng khoán cấp cao với khả năng "đọc vị" thị trường và tâm lý đám đông. Nhiệm vụ của bạn là viết một đoạn lời thoại (Voiceover) 30 giây cực kỳ lôi cuốn cho video ngắn về chủ đề: "{topic}".
         
-        # SCRIPT REQUIREMENTS (CRITICAL)
-        Kịch bản phải tuân thủ nghiêm ngặt cấu trúc và các yếu tố sau để tối ưu hóa Giữ chân khán giả (Watch time) và Tương tác (Engagement):
+        # YÊU CẦU VỀ VĂN PHONG (CHỨNG KHOÁN)
+        - **Giọng điệu:** Quyết đoán, chuyên nghiệp, mang tính "tiết lộ bí mật" hoặc "cảnh báo khẩn cấp".
+        - **Ngôn ngữ:** Sử dụng linh hoạt các thuật ngữ chứng khoán (như: FOMO, thanh khoản, đu đỉnh, cắt lỗ, cá mập, gom hàng...) một cách tự nhiên.
+        - **Nhịp điệu:** Nhanh, dồn dập ở phần đầu (tạo sự kịch tính) và chậm lại, chắc chắn ở phần đưa ra giải pháp.
         
-        1.  **THE HOOK (0-3s) - Cấp độ "Dừng lướt":**
-            * Phải là một câu nói hoặc hình ảnh gây sốc, đánh trúng vào nỗi sợ hãi lớn nhất, sự tò mò tột độ hoặc một lầm tưởng phổ biến (myth) liên quan đến {topic}.
-            * *Không được mở đầu bằng: "Chào mọi người...", "Hôm nay mình sẽ..."*
+        # CẤU TRÚC LỜI THOẠI (STRICTLY VOICEOVER ONLY)
+        Văn bản trả về phải là một đoạn nói liền mạch, không có ký hiệu kịch bản, bao gồm 3 phần:
         
-        2.  **THE CONTENT BODY (4-25s) - GIÁ TRỊ CỐT LÕI:**
-            * Cung cấp chính xác 3 "vũ khí bí mật", 3 bước thực hiện ngay lập tức, hoặc 1 bí mật mà 99% mọi người không biết về {topic}.
-            * Nội dung phải đi thẳng vào vấn đề, sử dụng từ ngữ hành động mạnh mạnh, không có từ thừa.
+        1.  **THE HOOK (Cú tát thị trường):** Đánh thẳng vào một sai lầm chết người mà số đông đang mắc phải hoặc một cơ hội sắp trôi qua. (Ví dụ: "Bạn đang vui mừng vì mã này tím? Coi chừng, đó là cái bẫy!")
+        2.  **THE INSIGHT (Góc nhìn chuyên gia):** Giải mã "game" của đội lái hoặc đưa ra một chỉ số kỹ thuật/vĩ mô cực kỳ quan trọng về {topic} mà ít người để ý.
+        3.  **THE CALL (Hành động):** Lời kêu gọi mang tính đặc quyền. (Ví dụ: "Đừng để bị 'thịt' thêm lần nào nữa. Click vào bio xem danh mục siêu cổ phiếu tuần tới của mình.")
         
-        3.  **THE CTA (CALL TO ACTION) (26-30s) - TỐI ƯU CHUYỂN ĐỔI:**
-            * Lời kêu gọi hành động phải tự nhiên, gắn liền với lợi ích của khán giả khi tương tác.
-            * Ví dụ CTA nâng cấp: "Lưu lại ngay kẻo lạc mất", "Comment ['{topic}'] mình gửi tài liệu chi tiết", "Follow để không bỏ lỡ phần tiếp theo".
-        ---
-        Bắt đầu viết kịch bản ngay bây giờ:
+        # RÀNG BUỘC ĐẦU RA
+        - Chỉ trả về DUY NHẤT lời thoại để đọc, không giải thích, không thêm ký hiệu [Cảnh], không dùng hashtag.
+        - Độ dài: 80 - 100 chữ (vừa đủ cho 30 giây nói tốc độ trung bình).
 """
-
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
