@@ -9,7 +9,7 @@ import os
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 def generate_variations(topic):
-    prompt = f"Tạo 5 biến thể viral từ topic: {topic}"
+    prompt = f"Tạo 1 biến thể viral từ topic: {topic}"
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
