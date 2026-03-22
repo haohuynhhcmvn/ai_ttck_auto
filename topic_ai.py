@@ -1,8 +1,3 @@
-
-# ==============================
-# GENERATE TRENDING TOPICS
-# ==============================
-
 import requests
 import os
 
@@ -15,21 +10,13 @@ def generate_topics():
 
     prompt = "Tạo 10 topic viral về chứng khoán Việt Nam"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
     res = requests.post(url, json={
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
+        "contents": [{"parts": [{"text": prompt}]}]
     })
 
     data = res.json()
-
-    print("DEBUG GEMINI:", data)
 
     try:
         text = data["candidates"][0]["content"]["parts"][0]["text"]
@@ -48,3 +35,8 @@ def generate_topics():
             "Sai lầm khiến bạn mất tiền",
             "Cơ hội lớn tuần này"
         ]
+
+
+# 🔥 PHẢI CÓ HÀM NÀY
+def pick_best_topic(topics):
+    return topics[0] if topics else "Tin nóng thị trường"
