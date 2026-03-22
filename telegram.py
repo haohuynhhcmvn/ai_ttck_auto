@@ -14,3 +14,11 @@ def send_message(text):
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
         json={"chat_id": CHAT_ID, "text": text}
     )
+
+# 🔥 THÊM HÀM NÀY
+def send_video(file):
+    requests.post(
+        f"https://api.telegram.org/bot{BOT_TOKEN}/sendVideo",
+        files={"video": open(file, "rb")},
+        data={"chat_id": CHAT_ID}
+    )
