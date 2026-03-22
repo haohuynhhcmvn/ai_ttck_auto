@@ -47,12 +47,9 @@ def main():
     if not topics:
         topics = ["Tin nóng thị trường"]
 
-    main_topic = topics[0]
+    topics = topics[:1]  # chỉ 1 video
 
-    variations = generate_variations_local(main_topic)
-    variations = variations[:2]  # chạy 2 video
-
-    for i, topic in enumerate(variations):
+    for i, topic in enumerate(topics):
         process_video(topic, i)
 
 if __name__ == "__main__":
