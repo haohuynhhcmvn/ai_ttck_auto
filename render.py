@@ -6,7 +6,12 @@ from moviepy.editor import *
 import os
 import math
 import random
+from PIL import Image
 
+# FIX Pillow compatibility
+if not hasattr(Image, "ANTIALIAS"):
+    Image.ANTIALIAS = Image.Resampling.LANCZOS
+    
 def render_video(audio_path, subtitles, output):
     # 🔊 Load audio
     audio = AudioFileClip(audio_path)
