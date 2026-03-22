@@ -8,37 +8,43 @@ import os
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-
 def generate_topics():
-    
     if not API_KEY:
-    print("❌ Missing GEMINI_API_KEY")
-    return ["Tin nóng thị trường hôm nay"]
-    
+        print("❌ Missing GEMINI_API_KEY")
+        return ["Tin nóng thị trường hôm nay"]
+
     prompt = "Tạo 10 topic viral về chứng khoán Việt Nam"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key={API_KEY}"
 
     res = requests.post(url, json={
-        "contents": [{"parts": [{"text": prompt}]}]
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
     })
 
     data = res.json()
 
-    # DEBUG nếu lỗi
-    print("GEMINI RESPONSE:", data)
+    print("DEBUG GEMINI:", data)
 
     try:
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+
         return [
-            t for t in data["candidates"][0]["content"]["parts"][0]["text"].split("\n")
-            if len(t) > 10
+            t.strip("- ").strip()
+            for t in text.split("\n")
+            if len(t.strip()) > 10
         ]
     except:
-        print("⚠️ Gemini lỗi → fallback topic")
+        print("⚠️ Gemini lỗi → fallback")
 
         return [
             "VNINDEX có dấu hiệu đảo chiều?",
-            "Cổ phiếu bank có còn cơ hội?",
+            "Cổ phiếu bank còn cơ hội không?",
             "Sai lầm khiến bạn mất tiền",
             "Cơ hội lớn tuần này"
         ]
