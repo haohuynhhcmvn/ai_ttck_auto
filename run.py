@@ -12,7 +12,7 @@ from transcribe import transcribe                       # lấy timestamp
 from subtitle import create_subtitles                   # tạo subtitle
 from render import render_video                         # render video
 from upload_youtube import upload_video                 # upload youtube
-from telegram import send_message                       # gửi telegram
+from telegram import send_message, send_video           # gửi telegram
 
 # Hàm xử lý 1 video hoàn chỉnh
 def process_video(topic, index):
@@ -43,7 +43,10 @@ def process_video(topic, index):
 
     print(f"7. Gửi telegram")
     send_message(f"🔥 {topic}\n{url}")  # gửi telegram
-    send_video(output)
+    try:
+        send_video(output)
+    except Exception as e:
+        print("⚠️ gửi video lỗi:", e)
 
 def main():
     topics = generate_topics()
