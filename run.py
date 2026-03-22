@@ -42,14 +42,17 @@ def process_video(topic, index):
 
 
 def main():
-    topics = generate_topics()                 # lấy topic từ AI
-    main_topic = pick_best_topic(topics)       # chọn topic tốt nhất
+    
+    topics = generate_topics()
 
-    # variations = generate_variations(main_topic)  # clone topic
-    variations = variations[:1]               # giới hạn để tránh timeout
+    if not topics:
+        topics = ["Tin nóng thị trường"]
 
-    for i, topic in enumerate(variations):
+    topics = topics[:1]  # chạy 1 video
+
+    for i, topic in enumerate(topics):
         process_video(topic, i)
+
 
 if __name__ == "__main__":
     main()
