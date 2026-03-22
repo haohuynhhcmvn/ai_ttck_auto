@@ -31,6 +31,12 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Upload video artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-output
+          path: output_*.mp4
+    
       - name: Run
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
