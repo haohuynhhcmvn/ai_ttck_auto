@@ -45,7 +45,7 @@ def main():
     topics = generate_topics()                 # lấy topic từ AI
     main_topic = pick_best_topic(topics)       # chọn topic tốt nhất
 
-    variations = generate_variations(main_topic)  # clone topic
+    # variations = generate_variations(main_topic)  # clone topic
     variations = variations[:1]               # giới hạn để tránh timeout
 
     for i, topic in enumerate(variations):
