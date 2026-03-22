@@ -14,7 +14,7 @@ def generate_variations(topic):
         return [topic]
 
     prompt = f"""
-Tạo 5 biến thể viral từ topic:
+Tạo 1 biến thể viral từ topic:
 {topic}
 
 Yêu cầu:
