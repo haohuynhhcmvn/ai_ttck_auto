@@ -17,13 +17,19 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install system
+      - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core
-
-      - name: Install deps
-        run: pip install -r requirements.txt
+          sudo apt-get install -y ffmpeg imagemagick fonts-dejavu-core
+      
+      - name: Fix ImageMagick policy
+        run: |
+          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+      
+      - name: Install Python deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run
         env:
