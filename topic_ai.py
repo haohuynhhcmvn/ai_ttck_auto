@@ -8,7 +8,7 @@ def generate_topics():
         print("❌ Missing GEMINI_API_KEY")
         return ["Tin nóng thị trường hôm nay"]
 
-    prompt = "Tạo 10 topic viral về chứng khoán Việt Nam"
+    prompt = "Tạo 2 topic viral về chứng khoán Việt Nam"
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
