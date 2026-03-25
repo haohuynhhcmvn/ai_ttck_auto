@@ -1,159 +1,127 @@
 # ==============================
-# MARKET DATA PRO - SSI (ANTI BLOCK + STABLE)
+# MARKET DATA (FROM COLAB - PRODUCTION)
 # ==============================
 
-import requests
-import random
-import time
-
+import yfinance as yf
+import pandas as pd
 
 # ==============================
-# HEADER GIẢ LẬP TRÌNH DUYỆT (TRÁNH BỊ CHẶN BOT)
+# VN30 LIST (CHUẨN NHƯ COLAB)
 # ==============================
-def get_headers():
-    return {
-        # Random user agent để tránh bị detect bot
-        "User-Agent": random.choice([
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-            "Mozilla/5.0 (X11; Linux x86_64)"
-        ]),
-        "Accept": "application/json, text/plain, */*",
-        "Referer": "https://iboard.ssi.com.vn/",
-        "Origin": "https://iboard.ssi.com.vn"
-    }
+VN30 = [
+    "ACB.VN","BCM.VN","BID.VN","BVH.VN","CTG.VN","FPT.VN","GAS.VN","GVR.VN",
+    "HDB.VN","HPG.VN","MBB.VN","MSN.VN","MWG.VN","PLX.VN","POW.VN","SAB.VN",
+    "SHB.VN","SSB.VN","SSI.VN","STB.VN","TCB.VN","TPB.VN","VCB.VN","VHM.VN",
+    "VIB.VN","VIC.VN","VJC.VN","VNM.VN","VPB.VN","VRE.VN"
+]
 
 
 # ==============================
-# SAFE REQUEST (RETRY + CHỐNG DIE API)
+# LẤY DATA VN30 (CHUẨN NHƯ COLAB)
 # ==============================
-def safe_request(url, max_retry=3):
-    """
-    Gửi request an toàn:
-    - Có retry nếu lỗi
-    - Tránh crash khi API trả rỗng
-    """
+def get_vn30_data():
+    data = []
 
-    for i in range(max_retry):
+    for s in VN30:
         try:
-            res = requests.get(
-                url,
-                headers=get_headers(),
-                timeout=5
-            )
+            h = yf.Ticker(s).history(period="2d")
 
-            # 🔥 Check response hợp lệ
-            if res.status_code == 200 and res.text.strip():
-                return res.json()
+            if len(h) >= 2:
+                last = float(h["Close"].iloc[-1])
+                prev = float(h["Close"].iloc[-2])
 
-            print(f"⚠️ API rỗng hoặc lỗi status: {res.status_code}")
+                pct = (last - prev) / prev * 100
 
-        except Exception as e:
-            print(f"⚠️ Lỗi request lần {i+1}: {e}")
-
-        # ⏳ Delay tăng dần (tránh bị block)
-        time.sleep(1 + i)
-
-    return None  # ❌ nếu fail toàn bộ
-
-
-# ==============================
-# LẤY CHỈ SỐ (VNINDEX / VN30)
-# ==============================
-def get_index(symbol="VNINDEX"):
-    """
-    Lấy dữ liệu chỉ số:
-    - VNINDEX
-    - VN30
-    """
-
-    url = f"https://iboard.ssi.com.vn/{symbol}"
-
-    data = safe_request(url)
-
-    if not data:
-        print(f"❌ {symbol} lỗi")
-        return {
-            "close": "N/A",
-            "change": "N/A"
-        }
-
-    try:
-        return {
-            "close": round(float(data.get("close", 0)), 2),
-            "change": round(float(data.get("change", 0)), 2)
-        }
-    except:
-        return {
-            "close": "N/A",
-            "change": "N/A"
-        }
-
-
-# ==============================
-# LẤY TOP CỔ PHIẾU TĂNG / GIẢM
-# ==============================
-def get_top_stocks(limit=10):
-    """
-    Lấy danh sách:
-    - Top tăng
-    - Top giảm
-    """
-
-    url = "https://iboard.ssi.com.vn"
-
-    data = safe_request(url)
-
-    if not data:
-        print("❌ Không lấy được danh sách cổ phiếu")
-        return [], []
-
-    stocks = []
-
-    for item in data:
-        try:
-            # Mã cổ phiếu
-            symbol = item.get("stockSymbol")
-
-            # % thay đổi
-            change = float(item.get("percentChange", 0))
-
-            stocks.append((symbol, round(change, 2)))
+                data.append({
+                    "symbol": s.replace(".VN", ""),
+                    "change": round(pct, 2)
+                })
 
         except:
-            continue  # bỏ qua nếu lỗi
+            continue
 
-    # 🔥 Sắp xếp top tăng
-    gainers = sorted(stocks, key=lambda x: x[1], reverse=True)[:limit]
-
-    # 🔥 Sắp xếp top giảm
-    losers = sorted(stocks, key=lambda x: x[1])[:limit]
-
-    return gainers, losers
+    return pd.DataFrame(data)
 
 
 # ==============================
-# MAIN FUNCTION (DÙNG TOÀN PIPELINE)
+# VNINDEX (PROXY NHƯ COLAB)
+# ==============================
+def get_vnindex():
+    try:
+        h = yf.Ticker("VNM.VN").history(period="2d")
+
+        if len(h) < 2:
+            return {"close": "N/A", "change": "N/A"}
+
+        last = float(h["Close"].iloc[-1])
+        prev = float(h["Close"].iloc[-2])
+
+        pct = (last - prev) / prev * 100
+
+        return {
+            "close": round(last, 2),
+            "change": round(pct, 2)
+        }
+
+    except Exception as e:
+        print("❌ VNINDEX lỗi:", e)
+        return {"close": "N/A", "change": "N/A"}
+
+
+# ==============================
+# TOP TĂNG / GIẢM
+# ==============================
+def get_top_stocks(df, limit=10):
+    if df.empty:
+        return [], []
+
+    df_sorted = df.sort_values("change", ascending=False)
+
+    gainers = df_sorted.head(limit)
+    losers = df_sorted.tail(limit)
+
+    gainers_list = [
+        (row["symbol"], round(row["change"], 2))
+        for _, row in gainers.iterrows()
+    ]
+
+    losers_list = [
+        (row["symbol"], round(row["change"], 2))
+        for _, row in losers.iterrows()
+    ]
+
+    return gainers_list, losers_list
+
+
+# ==============================
+# MAIN FUNCTION (PIPELINE)
 # ==============================
 def get_market_data():
-    """
-    Hàm chính trả về toàn bộ data:
-    - VNINDEX
-    - VN30
-    - Top tăng
-    - Top giảm
-    """
+    try:
+        df = get_vn30_data()
 
-    # 📊 Lấy chỉ số
-    vnindex = get_index("VNINDEX")
-    vn30 = get_index("VN30")
+        vnindex = get_vnindex()
 
-    # 📈 Lấy top cổ phiếu
-    gainers, losers = get_top_stocks()
+        gainers, losers = get_top_stocks(df)
 
-    return {
-        "vnindex": vnindex,
-        "vn30": vn30,
-        "gainers": gainers,
-        "losers": losers
-    }
+        return {
+            "vnindex": vnindex,
+            "vn30": {
+                "close": "VN30",
+                "change": "N/A"
+            },
+            "gainers": gainers,
+            "losers": losers,
+            "raw": df.to_dict(orient="records")  # 🔥 cho AI dùng
+        }
+
+    except Exception as e:
+        print("❌ market_data lỗi:", e)
+
+        return {
+            "vnindex": {"close": "N/A", "change": "N/A"},
+            "vn30": {"close": "N/A", "change": "N/A"},
+            "gainers": [],
+            "losers": [],
+            "raw": []
+        }
