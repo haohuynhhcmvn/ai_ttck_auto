@@ -13,6 +13,7 @@ from subtitle import create_subtitles                   # tạo subtitle
 from render import render_video                         # render video
 from upload_youtube import upload_video                 # upload youtube
 from telegram import send_message, send_video           # gửi telegram
+from content_ai import script_to_content
 
 # Hàm xử lý 1 video hoàn chỉnh
 def process_video(topic, index):
@@ -20,6 +21,10 @@ def process_video(topic, index):
 
     print(f"1. AI viết nội dung")
     script = generate_script(topic)  # AI viết nội dung
+    
+    # 🔥 convert sang content social
+    print(f"Tạo content")
+    content = script_to_content(script, topic)
 
     print(f"2. Tạo audio")
     audio = text_to_speech(script)   # tạo audio
