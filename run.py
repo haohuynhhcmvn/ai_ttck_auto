@@ -14,6 +14,7 @@ from render import render_video                         # render video
 from upload_youtube import upload_video                 # upload youtube
 from telegram import send_message, send_video           # gửi telegram
 from content_ai import script_to_content
+from overlay import create_overlay
 
 # Hàm xử lý 1 video hoàn chỉnh
 def process_video(topic, index):
