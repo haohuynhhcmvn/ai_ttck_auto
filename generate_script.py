@@ -85,32 +85,32 @@ Biến động: {vn.get('change')} điểm...
     # PROMPT VIRAL
     # ==============================
     prompt = f"""
-Bạn là chuyên gia tạo video tài chính viral.
-
-DỮ LIỆU THỊ TRƯỜNG:
-{vn_text}
-{vn30_text}
-
-Top tăng: {gain_text}
-Top giảm: {lose_text}
-
-YÊU CẦU:
-
-1. HOOK cực mạnh 3 giây đầu
-2. Gây FOMO + sợ mất tiền
-3. Không nói hết → giữ người xem
-4. Câu ngắn 5–10 từ
-5. Không bịa data
-
-ĐỘ DÀI: 200–250 chữ
-
-FORMAT:
-- Đọc liên tục
-- Không ký hiệu
-- Không hashtag
-
-Chủ đề: {topic}
-"""
+        Bạn là chuyên gia tạo video tài chính viral.
+        
+        DỮ LIỆU THỊ TRƯỜNG:
+        {vn_text}
+        {vn30_text}
+        
+        Top tăng: {gain_text}
+        Top giảm: {lose_text}
+        
+        YÊU CẦU:
+        
+        1. HOOK cực mạnh 3 giây đầu
+        2. Gây FOMO + sợ mất tiền
+        3. Không nói hết → giữ người xem
+        4. Câu ngắn 5–10 từ
+        5. Không bịa data
+        
+        ĐỘ DÀI: 200–250 chữ
+        
+        FORMAT:
+        - Đọc liên tục
+        - Không ký hiệu
+        - Không hashtag
+        
+        Chủ đề: {topic}
+    """
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
@@ -131,21 +131,21 @@ def fallback_script(topic, vn_text):
     print("⚠️ Dùng fallback script")
 
     return f"""
-90% nhà đầu tư đang hiểu sai thị trường...
-
-{vn_text}
-
-Dòng tiền đang dịch chuyển âm thầm...
-
-Top cổ phiếu bắt đầu phân hóa mạnh...
-
-Nếu bạn vào sai nhịp...
-
-Tài khoản sẽ bốc hơi rất nhanh...
-
-Nhưng nếu hiểu đúng dòng tiền...
-
-Cơ hội vẫn còn phía trước...
-
-Ai hiểu sẽ hành động sớm...
-"""
+        90% nhà đầu tư đang hiểu sai thị trường...
+        
+        {vn_text}
+        
+        Dòng tiền đang dịch chuyển âm thầm...
+        
+        Top cổ phiếu bắt đầu phân hóa mạnh...
+        
+        Nếu bạn vào sai nhịp...
+        
+        Tài khoản sẽ bốc hơi rất nhanh...
+        
+        Nhưng nếu hiểu đúng dòng tiền...
+        
+        Cơ hội vẫn còn phía trước...
+        
+        Ai hiểu sẽ hành động sớm...
+    """
