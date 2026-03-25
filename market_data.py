@@ -67,7 +67,7 @@ def get_index(symbol="VNINDEX"):
     - VN30
     """
 
-    url = f"https://iboard.ssi.com.vn/dchart/api/index/{symbol}"
+    url = f"https://iboard.ssi.com.vn/{symbol}"
 
     data = safe_request(url)
 
@@ -100,7 +100,7 @@ def get_top_stocks(limit=10):
     - Top giảm
     """
 
-    url = "https://iboard.ssi.com.vn/dchart/api/stocklist"
+    url = "https://iboard.ssi.com.vn"
 
     data = safe_request(url)
 
