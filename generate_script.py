@@ -16,7 +16,7 @@ def generate_script(topic):
     
     # Prompt chuyên sâu cho Bản tin Chứng khoán hàng ngày
     prompt = f"""
-Bạn là một Biên tập viên Bản tin Tài chính cấp cao. Hãy viết một đoạn lời thoại (Voiceover) 30 giây cho bản tin chứng khoán ngày {today} về chủ đề: "{topic}".
+Bạn là một Biên tập viên Bản tin Tài chính cấp cao. Hãy viết một đoạn lời thoại (Voiceover) 90 giây cho bản tin chứng khoán ngày {today} về chủ đề: "{topic}".
 
 # YÊU CẦU VỀ PHONG CÁCH
 - **Mở đầu:** Phải có tên bản tin (Ví dụ: Nhịp đập thị trường, Chứng khoán 24h).
@@ -33,7 +33,7 @@ Văn bản trả về là một đoạn nói liền mạch, không chia cảnh, 
 # RÀNG BUỘC ĐẦU RA
 - Chỉ trả về DUY NHẤT lời thoại để đọc.
 - Không dùng ký hiệu [Cảnh], không giải thích, không hashtag.
-- Độ dài: Khoảng 80 - 120 chữ (tối ưu cho 60 giây nói).
+- Độ dài: Khoảng 200 - 250 chữ (tối ưu cho 90 giây nói).
 """
 
     # URL API (Sử dụng model gemini-1.5-flash để ổn định nhất hiện tại)
