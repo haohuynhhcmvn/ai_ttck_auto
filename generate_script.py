@@ -1,16 +1,19 @@
 # ==============================
-# GENERATE SCRIPT (FINAL PRO)
+# GENERATE SCRIPT (FINAL PRO - SSI DATA)
 # ==============================
 
 import requests
 import os
 import time
 from datetime import datetime
-from market_data import get_vnindex
+from market_data import get_market_data  # ✅ dùng data chuẩn
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 
+# ==============================
+# CLEAN TEXT FOR TTS
+# ==============================
 def optimize_for_tts(text):
     text = text.replace("VNINDEX", "VN-Index")
     text = text.replace(",", "...")
@@ -18,6 +21,9 @@ def optimize_for_tts(text):
     return text
 
 
+# ==============================
+# CALL GEMINI (RETRY)
+# ==============================
 def call_gemini(payload, retry=3):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
@@ -42,65 +48,69 @@ def call_gemini(payload, retry=3):
     return None
 
 
+# ==============================
+# MAIN GENERATE SCRIPT
+# ==============================
 def generate_script(topic):
     today = datetime.now().strftime("%d/%m/%Y")
 
-    data = get_vnindex()
+    # 🔥 LẤY DATA THẬT
+    data = get_market_data()
 
-    if isinstance(data, dict) and data.get("close") != "N/A":
-        vnindex_text = f"""
-            VN-Index đóng cửa tại {data['close']} điểm...
-            Biến động {data['change']} điểm...
-            """
+    vn = data.get("vnindex", {})
+    vn30 = data.get("vn30", {})
+    gainers = data.get("gainers", [])[:3]
+    losers = data.get("losers", [])[:3]
+
+    # ==============================
+    # BUILD TEXT DATA (ANTI FAKE)
+    # ==============================
+    if vn.get("close") != "N/A":
+        vn_text = f"""
+VN-Index: {vn.get('close')} điểm...
+Biến động: {vn.get('change')} điểm...
+"""
     else:
-        vnindex_text = """
-            Hiện chưa có dữ liệu chính xác VN-Index...
-            Phân tích xu hướng chung...
-            """
+        vn_text = "Chưa có dữ liệu VN-Index..."
 
+    if vn30.get("close") != "N/A":
+        vn30_text = f"VN30: {vn30.get('close')} điểm..."
+    else:
+        vn30_text = ""
+
+    gain_text = ", ".join([f"{s} {v}%" for s, v in gainers]) if gainers else ""
+    lose_text = ", ".join([f"{s} {v}%" for s, v in losers]) if losers else ""
+
+    # ==============================
+    # PROMPT VIRAL
+    # ==============================
     prompt = f"""
-            Bạn là chuyên gia tạo nội dung video viral TikTok về tài chính.
-            
-            DỮ LIỆU THỊ TRƯỜNG:
-            {vnindex_text}
-            
-            MỤC TIÊU:
-            Giữ chân người xem >80%
-            
-            YÊU CẦU CỰC KỲ QUAN TRỌNG:
-            
-            1. HOOK 3 GIÂY ĐẦU:
-            - Gây sốc / tranh cãi / sai lầm
-            - Ví dụ: "90% nhà đầu tư đang sai ngay lúc này..."
-            
-            2. CÂU NGẮN:
-            - Mỗi câu 5–10 từ
-            - Nhịp nhanh, dồn dập
-            
-            3. TÂM LÝ:
-            - FOMO (sợ bỏ lỡ)
-            - SỢ MẤT TIỀN
-            - NGHI NGỜ THỊ TRƯỜNG
-            
-            4. GIỮ LOOP:
-            - KHÔNG nói hết ngay
-            - Luôn tạo cảm giác "còn gì đó phía sau"
-            
-            5. DATA:
-            - CHỈ dùng dữ liệu đã cung cấp
-            - Không bịa số
-            
-            6. CTA:
-            - Không lộ liễu
-            - Kiểu: "Ai hiểu sẽ hành động sớm..."
-            
-            ĐỘ DÀI:
-            200–250 chữ
-            
-            FORMAT:
-            - Viết thành đoạn đọc liên tục
-            - Không ký hiệu, không hashtag
-            """
+Bạn là chuyên gia tạo video tài chính viral.
+
+DỮ LIỆU THỊ TRƯỜNG:
+{vn_text}
+{vn30_text}
+
+Top tăng: {gain_text}
+Top giảm: {lose_text}
+
+YÊU CẦU:
+
+1. HOOK cực mạnh 3 giây đầu
+2. Gây FOMO + sợ mất tiền
+3. Không nói hết → giữ người xem
+4. Câu ngắn 5–10 từ
+5. Không bịa data
+
+ĐỘ DÀI: 200–250 chữ
+
+FORMAT:
+- Đọc liên tục
+- Không ký hiệu
+- Không hashtag
+
+Chủ đề: {topic}
+"""
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
@@ -109,22 +119,33 @@ def generate_script(topic):
     script = call_gemini(payload)
 
     if not script:
-        return fallback_script(topic, vnindex_text)
+        return fallback_script(topic, vn_text)
 
     return optimize_for_tts(script.strip())
 
 
-def fallback_script(topic, vnindex_text):
+# ==============================
+# FALLBACK (KHÔNG AI)
+# ==============================
+def fallback_script(topic, vn_text):
     print("⚠️ Dùng fallback script")
 
     return f"""
-            Thị trường đang có biến động mạnh...
-            
-            {vnindex_text}
-            
-            Dòng tiền phân hóa rõ rệt...
-            
-            Nhà đầu tư cần thận trọng...
-            
-            Theo dõi kênh để cập nhật nhanh nhất...
-            """
+90% nhà đầu tư đang hiểu sai thị trường...
+
+{vn_text}
+
+Dòng tiền đang dịch chuyển âm thầm...
+
+Top cổ phiếu bắt đầu phân hóa mạnh...
+
+Nếu bạn vào sai nhịp...
+
+Tài khoản sẽ bốc hơi rất nhanh...
+
+Nhưng nếu hiểu đúng dòng tiền...
+
+Cơ hội vẫn còn phía trước...
+
+Ai hiểu sẽ hành động sớm...
+"""
