@@ -85,7 +85,7 @@ def get_vn30(df):
 # ==============================
 # TOP STOCKS
 # ==============================
-def get_top_stocks(limit=10):
+def get_top_stocks(limit=20):
     results = []
 
     for s in VN30:
