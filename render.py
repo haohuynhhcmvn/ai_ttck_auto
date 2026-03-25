@@ -5,109 +5,58 @@
 from moviepy.editor import *
 import os, math, random
 from overlay import create_overlay
-from market_data import get_market_data
 
-
-def loop_background(bg, duration):
-    """Loop video background nếu ngắn"""
-    if bg.duration < duration:
-        loop_count = math.ceil(duration / bg.duration)
-        bg = concatenate_videoclips([bg] * loop_count)
-    return bg
-
-
-def safe_resize_crop(video):
-    """Resize + crop chuẩn 9:16 (fix lỗi PIL ANTIALIAS)"""
-    video = video.resize(height=1280)
-    w, h = video.size
-
-    if w > 720:
-        video = video.crop(x_center=w/2, width=720)
-    else:
-        video = video.resize(width=720)
-
-    return video
-
-
-def add_zoom_effect(video, duration):
-    """Zoom nhẹ kiểu TikTok giữ chân viewer"""
-    return video.fx(vfx.resize, lambda t: 1 + 0.04 * t / duration)
-
-
-def render_video(audio_path, subtitles, output):
-    print("🎬 Render video PRO...")
+def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
+    print("🎬 Render video...")
 
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
-    # ==============================
+    # ==========================
     # BACKGROUND
-    # ==============================
+    # ==========================
     if os.path.exists("background.mp4"):
         bg = VideoFileClip("background.mp4")
 
-        bg = loop_background(bg, duration)
+        if bg.duration < duration:
+            loop = math.ceil(duration / bg.duration)
+            bg = concatenate_videoclips([bg]*loop)
 
-        max_start = max(0, bg.duration - duration)
-        start = random.uniform(0, max_start)
-
+        start = random.uniform(0, max(0, bg.duration - duration))
         video = bg.subclip(start, start + duration)
     else:
-        print("⚠️ Không có background → nền đen")
-        video = ColorClip((720, 1280), color=(0, 0, 0), duration=duration)
+        video = ColorClip((720,1280), color=(0,0,0), duration=duration)
 
-    video = safe_resize_crop(video)
+    # resize chuẩn dọc
+    video = video.resize(height=1280)
+    video = video.crop(x_center=video.w/2, width=720)
 
-    # 🔥 zoom nhẹ (giữ chân)
-    video = add_zoom_effect(video, duration)
+    video = video.set_audio(audio)
 
-    # ==============================
-    # DARK OVERLAY (giúp nổi chữ)
-    # ==============================
-    dark = ColorClip((720, 1280), color=(0, 0, 0), duration=duration).set_opacity(0.35)
+    # ==========================
+    # OVERLAY DATA
+    # ==========================
+    if market_data:
+        try:
+            overlay = create_overlay(market_data, duration)
+            clips = [video, overlay] + subtitles
+        except Exception as e:
+            print("⚠️ overlay lỗi:", e)
+            clips = [video] + subtitles
+    else:
+        clips = [video] + subtitles
 
-    base = CompositeVideoClip([video, dark])
+    # ==========================
+    # FINAL
+    # ==========================
+    final = CompositeVideoClip(clips)
 
-    # ==============================
-    # DATA REALTIME
-    # ==============================
-    try:
-        market_data = get_market_data()
-    except:
-        market_data = {}
-
-    overlay = create_overlay(market_data, duration)
-
-    # ==============================
-    # SCENE CHIA (giống TV)
-    # ==============================
-    intro = TextClip(
-        "BẢN TIN CHỨNG KHOÁN",
-        fontsize=70,
-        color="cyan",
-        method="caption",
-        size=(700, None)
-    ).set_position(("center", 200)).set_duration(3)
-
-    intro = intro.crossfadein(0.5)
-
-    # ==============================
-    # FINAL COMPOSE
-    # ==============================
-    final = CompositeVideoClip(
-        [base, overlay, intro] + subtitles
-    ).set_audio(audio)
-
-    # ==============================
-    # EXPORT
-    # ==============================
     final.write_videofile(
         output,
         fps=30,
         codec="libx264",
-        audio_codec="aac",
-        bitrate="2500k",
-        threads=2
+        audio_codec="aac"
     )
 
+    print("✅ Done:", output)
     print("✅ Done video:", output)
