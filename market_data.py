@@ -1,72 +1,65 @@
 # ==============================
-# REAL MARKET DATA - VNINDEX
+# MARKET DATA - YAHOO FAST
 # ==============================
 
-from datetime import datetime
-import time
+import yfinance as yf
 
+VN_STOCKS = [
+    "SSI.VN","VND.VN","HPG.VN","MWG.VN","FPT.VN",
+    "VCB.VN","BID.VN","CTG.VN","TCB.VN","VPB.VN",
+    "NVL.VN","PDR.VN","DIG.VN","DXG.VN","KBC.VN",
+    "GEX.VN","VIC.VN","VHM.VN","VRE.VN","STB.VN"
+]
 
-# ==============================
-# GET VNINDEX DATA (SAFE + REALTIME)
-# ==============================
-def get_vnindex(retry=3):
-    """
-    Lấy dữ liệu VN-Index mới nhất
-    Có retry + fallback → không crash pipeline
-    """
+def get_vnindex():
+    try:
+        df = yf.download("^VNINDEX", period="1d", progress=False)
+        close = df["Close"].iloc[-1]
+        open_price = df["Open"].iloc[-1]
+        return round(close,2), round(close-open_price,2)
+    except:
+        return "N/A", "N/A"
 
-    for attempt in range(retry):
-        try:
-            # 🔥 import bên trong để tránh lỗi môi trường
-            from vnstock import Vnstock
+def get_top_stocks(limit=10):
+    try:
+        df = yf.download(
+            VN_STOCKS,
+            period="1d",
+            group_by="ticker",
+            threads=True,
+            progress=False
+        )
 
-            # 🔥 ngày hiện tại (dynamic)
-            today = datetime.now().strftime("%Y-%m-%d")
+        results = []
 
-            # 🔥 init API
-            stock = Vnstock().stock(symbol="VNINDEX", source="VCI")
+        for symbol in VN_STOCKS:
+            try:
+                data = df[symbol]
+                close = data["Close"].iloc[-1]
+                open_price = data["Open"].iloc[-1]
+                change = ((close-open_price)/open_price)*100
+                results.append((symbol.replace(".VN",""), round(change,2)))
+            except:
+                continue
 
-            # 🔥 lấy dữ liệu lịch sử
-            df = stock.quote.history(
-                start="2024-01-01",
-                end=today,
-                interval="1D"
-            )
+        gainers = sorted(results, key=lambda x:x[1], reverse=True)[:limit]
+        losers = sorted(results, key=lambda x:x[1])[:limit]
 
-            # 🔥 check dữ liệu
-            if df is None or df.empty:
-                raise Exception("Data rỗng")
+        gainers = [(s, f"+{v}%") for s,v in gainers]
+        losers = [(s, f"{v}%") for s,v in losers]
 
-            latest = df.iloc[-1]
+        return gainers, losers
 
-            close = float(latest["close"])
-            open_price = float(latest["open"])
-            volume = int(latest["volume"])
+    except:
+        return [], []
 
-            change = round(close - open_price, 2)
-            change_pct = round((change / open_price) * 100, 2)
-
-            print(f"📊 VNINDEX: {close} ({change} | {change_pct}%)")
-
-            return {
-                "close": round(close, 2),
-                "change": change,
-                "change_pct": change_pct,
-                "volume": volume
-            }
-
-        except Exception as e:
-            print(f"⚠️ Lỗi lấy data (lần {attempt+1}):", e)
-            time.sleep(2)
-
-    # ==============================
-    # FALLBACK (KHÔNG CRASH)
-    # ==============================
-    print("❌ Không lấy được dữ liệu VNINDEX → dùng fallback")
+def get_market_data():
+    vnindex_val, vnindex_change = get_vnindex()
+    gainers, losers = get_top_stocks()
 
     return {
-        "close": "N/A",
-        "change": "N/A",
-        "change_pct": "N/A",
-        "volume": "N/A"
+        "vnindex": (vnindex_val, vnindex_change),
+        "vn30": (vnindex_val, vnindex_change),  # fallback
+        "gainers": gainers,
+        "losers": losers
     }
