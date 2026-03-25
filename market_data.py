@@ -1,12 +1,13 @@
 # ==============================
-# MARKET DATA (FROM COLAB - PRODUCTION)
+# MARKET DATA PRO - YAHOO STABLE
 # ==============================
 
 import yfinance as yf
 import pandas as pd
+import time
 
 # ==============================
-# VN30 LIST (CHUẨN NHƯ COLAB)
+# DANH SÁCH VN30 (CHUẨN)
 # ==============================
 VN30 = [
     "ACB.VN","BCM.VN","BID.VN","BVH.VN","CTG.VN","FPT.VN","GAS.VN","GVR.VN",
@@ -15,113 +16,133 @@ VN30 = [
     "VIB.VN","VIC.VN","VJC.VN","VNM.VN","VPB.VN","VRE.VN"
 ]
 
-
 # ==============================
-# LẤY DATA VN30 (CHUẨN NHƯ COLAB)
+# SAFE DOWNLOAD (TRÁNH DIE API)
 # ==============================
-def get_vn30_data():
-    data = []
+def safe_download(ticker):
+    try:
+        df = yf.Ticker(ticker).history(period="2d")
 
-    for s in VN30:
-        try:
-            h = yf.Ticker(s).history(period="2d")
+        if df is None or df.empty or len(df) < 2:
+            return None
 
-            if len(h) >= 2:
-                last = float(h["Close"].iloc[-1])
-                prev = float(h["Close"].iloc[-2])
+        return df
 
-                pct = (last - prev) / prev * 100
-
-                data.append({
-                    "symbol": s.replace(".VN", ""),
-                    "change": round(pct, 2)
-                })
-
-        except:
-            continue
-
-    return pd.DataFrame(data)
+    except Exception as e:
+        print(f"❌ Lỗi tải {ticker}:", e)
+        return None
 
 
 # ==============================
-# VNINDEX (PROXY NHƯ COLAB)
+# VNINDEX (GIẢ LẬP TỪ VNM)
 # ==============================
 def get_vnindex():
+    """
+    ⚠️ Yahoo KHÔNG có VNINDEX thật
+    → dùng proxy từ VNM (ổn định nhất)
+    """
+
+    df = safe_download("VNM.VN")
+
+    if df is None:
+        return {"close": "N/A", "change": "N/A"}
+
     try:
-        h = yf.Ticker("VNM.VN").history(period="2d")
+        last = float(df["Close"].iloc[-1])
+        prev = float(df["Close"].iloc[-2])
 
-        if len(h) < 2:
-            return {"close": "N/A", "change": "N/A"}
-
-        last = float(h["Close"].iloc[-1])
-        prev = float(h["Close"].iloc[-2])
-
-        pct = (last - prev) / prev * 100
+        change = last - prev
 
         return {
             "close": round(last, 2),
-            "change": round(pct, 2)
+            "change": round(change, 2)
         }
 
-    except Exception as e:
-        print("❌ VNINDEX lỗi:", e)
+    except:
         return {"close": "N/A", "change": "N/A"}
 
 
 # ==============================
-# TOP TĂNG / GIẢM
+# VN30 INDEX (GIẢ LẬP)
 # ==============================
-def get_top_stocks(df, limit=10):
-    if df.empty:
-        return [], []
+def get_vn30(df):
+    """
+    Lấy trung bình VN30 → giả lập index
+    """
 
-    df_sorted = df.sort_values("change", ascending=False)
+    try:
+        avg = df["Change"].mean()
 
-    gainers = df_sorted.head(limit)
-    losers = df_sorted.tail(limit)
+        return {
+            "close": "N/A",
+            "change": round(avg, 2)
+        }
 
-    gainers_list = [
-        (row["symbol"], round(row["change"], 2))
-        for _, row in gainers.iterrows()
-    ]
-
-    losers_list = [
-        (row["symbol"], round(row["change"], 2))
-        for _, row in losers.iterrows()
-    ]
-
-    return gainers_list, losers_list
+    except:
+        return {"close": "N/A", "change": "N/A"}
 
 
 # ==============================
-# MAIN FUNCTION (PIPELINE)
+# TOP STOCKS
+# ==============================
+def get_top_stocks(limit=10):
+    results = []
+
+    for s in VN30:
+        df = safe_download(s)
+
+        if df is None:
+            continue
+
+        try:
+            last = float(df["Close"].iloc[-1])
+            prev = float(df["Close"].iloc[-2])
+
+            pct = (last - prev) / prev * 100
+
+            results.append({
+                "symbol": s.replace(".VN", ""),
+                "change": round(pct, 2)
+            })
+
+        except:
+            continue
+
+        # ⚡ tránh rate limit
+        time.sleep(0.05)
+
+    if not results:
+        return [], [], pd.DataFrame()
+
+    df = pd.DataFrame(results)
+
+    gainers = df.sort_values("change", ascending=False).head(limit)
+    losers = df.sort_values("change").head(limit)
+
+    gainers_list = list(zip(gainers["symbol"], gainers["change"]))
+    losers_list = list(zip(losers["symbol"], losers["change"]))
+
+    return gainers_list, losers_list, df
+
+
+# ==============================
+# MAIN FUNCTION
 # ==============================
 def get_market_data():
-    try:
-        df = get_vn30_data()
+    """
+    Output chuẩn cho toàn pipeline
+    """
 
-        vnindex = get_vnindex()
+    # 🔥 lấy top cổ phiếu
+    gainers, losers, df = get_top_stocks()
 
-        gainers, losers = get_top_stocks(df)
+    # 🔥 lấy index
+    vnindex = get_vnindex()
+    vn30 = get_vn30(df)
 
-        return {
-            "vnindex": vnindex,
-            "vn30": {
-                "close": "VN30",
-                "change": "N/A"
-            },
-            "gainers": gainers,
-            "losers": losers,
-            "raw": df.to_dict(orient="records")  # 🔥 cho AI dùng
-        }
-
-    except Exception as e:
-        print("❌ market_data lỗi:", e)
-
-        return {
-            "vnindex": {"close": "N/A", "change": "N/A"},
-            "vn30": {"close": "N/A", "change": "N/A"},
-            "gainers": [],
-            "losers": [],
-            "raw": []
-        }
+    return {
+        "vnindex": vnindex,
+        "vn30": vn30,
+        "gainers": gainers,
+        "losers": losers
+    }
