@@ -47,7 +47,7 @@ def process_video(topic, index):
 
 
     print(f"7. Gửi telegram")
-    send_message(f"🔥 {topic}\n{url}")  # gửi telegram
+    send_message(f"🔥 {content}\n{url}")  # gửi telegram
     try:
         send_video(output)
     except Exception as e:
