@@ -1,127 +1,60 @@
 # ==============================
-# OVERLAY (BLOOMBERG STYLE - COMPATIBLE)
+# BLOOMBERG STYLE OVERLAY
 # ==============================
 
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
-from moviepy.editor import ImageClip, CompositeVideoClip
+from moviepy.editor import ImageClip
 
 
-# ==============================
-# LOAD FONT
-# ==============================
-def load_font(size):
-    paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    ]
-
-    for p in paths:
-        try:
-            return ImageFont.truetype(p, size)
-        except:
-            continue
-
-    return ImageFont.load_default()
-
-
-# ==============================
-# SAFE TEXT
-# ==============================
-def safe_text(x):
-    try:
-        return str(x)
-    except:
-        return "N/A"
-
-
-# ==============================
-# BUILD TICKER TEXT
-# ==============================
-def build_ticker(data):
-    parts = []
-
-    for item in data.get("gainers", [])[:5]:
-        try:
-            s, v = item
-            parts.append(f"{s} {v}")
-        except:
-            continue
-
-    for item in data.get("losers", [])[:5]:
-        try:
-            s, v = item
-            parts.append(f"{s} {v}")
-        except:
-            continue
-
-    return "   |   ".join(parts)
-
-
-# ==============================
-# DRAW MAIN PANEL
-# ==============================
-def draw_panel(data, size=(720,1280)):
-    img = Image.new("RGBA", size, (0,0,0,0))
+def draw_overlay(data, size=(720,1280)):
+    img = Image.new("RGBA", size, (0,0,0,180))
     draw = ImageDraw.Draw(img)
 
-    font_big = load_font(70)
-    font_small = load_font(36)
+    try:
+        font_big = ImageFont.truetype("DejaVuSans-Bold.ttf", 42)
+        font = ImageFont.truetype("DejaVuSans.ttf", 26)
+    except:
+        font_big = font = ImageFont.load_default()
 
+    # ===== HEADER =====
+    draw.rectangle((0,0,720,80), fill=(255,140,0,255))
+    draw.text((20,20), "MARKET LIVE", font=font_big, fill="black")
+
+    y = 120
+
+    # ===== VNINDEX =====
     vn = data.get("vnindex", {})
-    close = safe_text(vn.get("close", "N/A"))
-    change = safe_text(vn.get("change", "N/A"))
+    text = f"VN-Index: {vn.get('close')} ({vn.get('change')})"
+    draw.text((20,y), text, font=font_big, fill="white")
+    y += 80
 
-    # 🎨 màu
-    color = "white"
-    if "-" in change:
-        color = "#ff4d4f"
-    elif "+" in change:
-        color = "#00e676"
+    # ===== VN30 =====
+    vn30 = data.get("vn30", {})
+    text = f"VN30: {vn30.get('close')} ({vn30.get('change')})"
+    draw.text((20,y), text, font=font, fill="white")
+    y += 60
 
-    # 🔳 box nền
-    draw.rectangle([40, 60, 680, 240], fill=(0,0,0,180))
+    # ===== TOP GAINERS =====
+    draw.text((20,y), "TOP GAINERS", font=font_big, fill="green")
+    y += 40
 
-    draw.text((60, 70), "VN-INDEX", font=font_small, fill="white")
+    for s, v in data.get("gainers", [])[:5]:
+        draw.text((20,y), f"{s}: +{v}%", font=font, fill="green")
+        y += 30
 
-    draw.text((60, 120), close, font=font_big, fill=color)
+    # ===== TOP LOSERS =====
+    y += 30
+    draw.text((20,y), "TOP LOSERS", font=font_big, fill="red")
+    y += 40
 
-    draw.text((420, 140), change, font=font_small, fill=color)
+    for s, v in data.get("losers", [])[:5]:
+        draw.text((20,y), f"{s}: {v}%", font=font, fill="red")
+        y += 30
 
     return np.array(img)
 
 
-# ==============================
-# CREATE TICKER CLIP
-# ==============================
-def create_ticker(data, duration):
-    font = load_font(36)
-
-    text = build_ticker(data)
-
-    # tạo ảnh dài
-    img = Image.new("RGB", (3000, 100), (0,0,0))
-    draw = ImageDraw.Draw(img)
-    draw.text((10, 20), text, font=font, fill="white")
-
-    arr = np.array(img)
-
-    clip = ImageClip(arr).set_duration(duration)
-
-    # 🎬 chạy ngang
-    def move(t):
-        speed = 150
-        return (-speed * t % arr.shape[1], 1100)
-
-    return clip.set_position(move)
-
-
-# ==============================
-# MAIN API (GIỮ NGUYÊN PIPELINE)
-# ==============================
 def create_overlay(data, duration):
-    panel = ImageClip(draw_panel(data)).set_duration(duration)
-
-    ticker = create_ticker(data, duration)
-
-    return CompositeVideoClip([panel, ticker])
+    img = draw_overlay(data)
+    return ImageClip(img).set_duration(duration)
