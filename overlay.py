@@ -1,64 +1,50 @@
-from moviepy.editor import TextClip
+# ==============================
+# OVERLAY TEXT (PIL)
+# ==============================
 
-def create_market_overlay(data, duration):
-    clips = []
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from moviepy.editor import ImageClip
 
-    # 📊 VNINDEX
-    vnindex_text = f"VN-Index: {data['vnindex']['value']} ({data['vnindex']['change']})"
+def draw_text_block(data, size=(720,1280)):
+    img = Image.new("RGBA", size, (0,0,0,0))
+    draw = ImageDraw.Draw(img)
 
-    clips.append(
-        TextClip(
-            vnindex_text,
-            fontsize=40,
-            color="white",
-            font="assets/fonts/NotoSans-Bold.ttf"
-        )
-        .set_position(("center", 50))
-        .set_duration(duration)
-    )
+    try:
+        font_big = ImageFont.truetype("arial.ttf", 50)
+        font = ImageFont.truetype("arial.ttf", 32)
+    except:
+        font_big = font = ImageFont.load_default()
 
-    # 📊 VN30
-    vn30_text = f"VN30: {data['vn30']['value']} ({data['vn30']['change']})"
+    y = 50
 
-    clips.append(
-        TextClip(
-            vn30_text,
-            fontsize=35,
-            color="yellow",
-            font="assets/fonts/NotoSans-Bold.ttf"
-        )
-        .set_position(("center", 100))
-        .set_duration(duration)
-    )
+    # VNINDEX
+    vn = data["vnindex"]
+    draw.text((50,y), f"VNINDEX: {vn[0]} ({vn[1]})", font=font_big, fill="white")
+    y += 80
 
-    # 🔥 TOP GAINERS
-    y = 200
-    for stock, val in data["top_gainers"][:5]:
-        clips.append(
-            TextClip(
-                f"↑ {stock}: {val}",
-                fontsize=30,
-                color="green",
-                font="assets/fonts/NotoSans-Regular.ttf"
-            )
-            .set_position((50, y))
-            .set_duration(duration)
-        )
-        y += 40
+    # VN30
+    vn30 = data["vn30"]
+    draw.text((50,y), f"VN30: {vn30[0]} ({vn30[1]})", font=font, fill="yellow")
+    y += 60
 
-    # 🔻 TOP LOSERS
-    y = 200
-    for stock, val in data["top_losers"][:5]:
-        clips.append(
-            TextClip(
-                f"↓ {stock}: {val}",
-                fontsize=30,
-                color="red",
-                font="assets/fonts/NotoSans-Regular.ttf"
-            )
-            .set_position((400, y))
-            .set_duration(duration)
-        )
-        y += 40
+    # TOP TĂNG
+    draw.text((50,y), "TOP TĂNG:", font=font, fill="green")
+    y += 40
+    for s,v in data["gainers"]:
+        draw.text((50,y), f"{s}: {v}", font=font, fill="green")
+        y += 35
 
-    return clips
+    # TOP GIẢM
+    y = 400
+    draw.text((50,y), "TOP GIẢM:", font=font, fill="red")
+    y += 40
+    for s,v in data["losers"]:
+        draw.text((50,y), f"{s}: {v}", font=font, fill="red")
+        y += 35
+
+    return np.array(img)
+
+def create_overlay(data, duration):
+    img = draw_text_block(data)
+    return ImageClip(img).set_duration(duration)
