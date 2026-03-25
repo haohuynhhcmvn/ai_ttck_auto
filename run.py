@@ -38,7 +38,8 @@ def process_video(topic, index):
 
     print(f"5. Render video")   
     output = f"output_{index}.mp4"
-    render_video(audio, subs, output)  # render video
+    render_video(audio, subs, output, topic, market_data, script)
+    #render_video(audio, subs, output)  # render video
     
     print("6. Upload youtube")
     try:
