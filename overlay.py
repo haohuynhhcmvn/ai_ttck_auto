@@ -5,7 +5,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from moviepy.editor import ImageClip
-
+from datetime import datetime
 
 def draw_overlay(data, size=(720,1280)):
     img = Image.new("RGBA", size, (0,0,0,180))
@@ -17,9 +17,18 @@ def draw_overlay(data, size=(720,1280)):
     except:
         font_big = font = ImageFont.load_default()
 
+
     # ===== HEADER =====
     draw.rectangle((0,0,720,80), fill=(255,140,0,255))
+    
+    # 📅 Lấy ngày hiện tại
+    today = datetime.now().strftime("%d/%m/%Y")
+    
+    # 📰 Title bên trái
     draw.text((20,20), "MARKET LIVE", font=font_big, fill="black")
+    
+    # 📅 Ngày bên phải (căn phải cho đẹp như TV)
+    draw.text((520,20), today, font=font, fill="black")
 
     y = 120
 
