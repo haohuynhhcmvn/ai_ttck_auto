@@ -1,59 +1,135 @@
-
 # ==============================
-# GENERATE SCRIPT USING GEMINI
+# GENERATE SCRIPT (REAL DATA + GEMINI)
 # ==============================
 
 import requests
 import os
 from datetime import datetime
+from market_data import get_vnindex  # 🔥 lấy data thật
 
-# Lấy API KEY từ biến môi trường
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+
+# ==============================
+# CLEAN TEXT FOR TTS
+# ==============================
+def optimize_for_tts(text):
+    text = text.replace("VNINDEX", "VN-Index")
+    text = text.replace(",", "...")
+    text = text.replace(".", "...")
+    return text
+
+
+# ==============================
+# GENERATE SCRIPT
+# ==============================
 def generate_script(topic):
-    # Tự động lấy ngày hiện tại định dạng DD/MM/YYYY
     today = datetime.now().strftime("%d/%m/%Y")
-    
-    # Prompt chuyên sâu cho Bản tin Chứng khoán hàng ngày
-    prompt = f"""
-Bạn là một Biên tập viên Bản tin Tài chính cấp cao. Hãy viết một đoạn lời thoại (Voiceover) 90 giây cho bản tin chứng khoán ngày {today} về chủ đề: "{topic}".
 
-# YÊU CẦU VỀ PHONG CÁCH
-- **Mở đầu:** Phải có tên bản tin (Ví dụ: Nhịp đập thị trường, Chứng khoán 24h).
-- **Văn phong:** Tin tức, dồn dập, khách quan nhưng sắc sảo. Tốc độ đọc chuyên nghiệp.
-- **Ngôn ngữ:** Sử dụng thuật ngữ: VN-Index, thanh khoản, khối ngoại, tự doanh, bùng nổ, lội ngược dòng...
+    # 🔥 LẤY DATA THẬT
+    data = get_vnindex()
 
-# CẤU TRÚC LỜI THOẠI (STRICTLY VOICEOVER ONLY)
-Văn bản trả về là một đoạn nói liền mạch, không chia cảnh, không ký hiệu, bao gồm:
-1. Chào sân & Cập nhật chỉ số VN-Index của ngày {today}.
-2. Điểm nhấn ngành nóng nhất trong phiên liên quan đến {topic}.
-3. Lời khuyên hành động/Chiến lược cho phiên giao dịch kế tiếp.
-4. Câu chốt thương hiệu và kêu gọi hành động (CTA).
-
-# RÀNG BUỘC ĐẦU RA
-- Chỉ trả về DUY NHẤT lời thoại để đọc.
-- Không dùng ký hiệu [Cảnh], không giải thích, không hashtag.
-- Độ dài: Khoảng 200 - 250 chữ (tối ưu cho 90 giây nói).
+    if data:
+        vnindex_text = f"""
+VN-Index đóng cửa tại {data['close']} điểm.
+Biến động {data['change']} điểm trong phiên.
+Thanh khoản đạt {data['volume']} cổ phiếu.
+"""
+    else:
+        vnindex_text = """
+Hiện chưa có dữ liệu chính xác VN-Index hôm nay.
+Hãy phân tích xu hướng chung của thị trường.
 """
 
-    # URL API (Sử dụng model gemini-1.5-flash để ổn định nhất hiện tại)
+    # ==============================
+    # PROMPT CHUẨN (ANTI-BỊA DATA)
+    # ==============================
+    prompt = f"""
+Bạn là một Biên tập viên Bản tin Tài chính cấp cao.
+
+DỮ LIỆU THỊ TRƯỜNG HÔM NAY:
+{vnindex_text}
+
+YÊU CẦU QUAN TRỌNG:
+- CHỈ sử dụng dữ liệu đã cung cấp
+- TUYỆT ĐỐI KHÔNG được tự tạo số liệu mới
+- Nếu thiếu dữ liệu → chỉ phân tích xu hướng
+
+Nhiệm vụ:
+Viết lời thoại bản tin chứng khoán 90 giây cho ngày {today}
+
+Chủ đề: {topic}
+
+YÊU CẦU:
+- Văn phong tin tức, nhanh, dồn dập
+- Câu ngắn (rất quan trọng cho TTS)
+- Có nhịp ngắt tự nhiên (dùng dấu ...)
+- Có cảm xúc nhẹ (tăng giữ chân người xem)
+
+CẤU TRÚC:
+1. Mở đầu gây chú ý (hook mạnh)
+2. Cập nhật VN-Index (dựa trên data thật)
+3. Ngành / cổ phiếu nổi bật
+4. Chiến lược hành động
+5. CTA (follow kênh)
+
+RÀNG BUỘC:
+- 200–250 chữ
+- Viết thành đoạn đọc liền mạch
+- KHÔNG dùng ký hiệu, không hashtag
+"""
+
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
-            "temperature": 0.7,  # Giúp lời thoại sáng tạo nhưng vẫn chuẩn mực
+            "temperature": 0.7,
             "topP": 0.8,
             "topK": 40
         }
     }
 
     try:
-        res = requests.post(url, json=payload)
-        res.raise_for_status() # Kiểm tra lỗi HTTP
-        
-        # Trích xuất văn bản từ phản hồi của Gemini
-        script = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        res = requests.post(url, json=payload, timeout=30)
+        res.raise_for_status()
+
+        data_json = res.json()
+
+        # 🔥 DEBUG nếu lỗi quota hoặc response khác
+        if "candidates" not in data_json:
+            print("⚠️ Gemini lỗi:", data_json)
+            return fallback_script(topic, vnindex_text)
+
+        script = data_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+        # 🔥 tối ưu cho TTS
+        script = optimize_for_tts(script)
+
         return script
+
     except Exception as e:
-        return f"Đã xảy ra lỗi khi tạo kịch bản: {e}"
+        print("⚠️ Lỗi Gemini:", e)
+        return fallback_script(topic, vnindex_text)
+
+
+# ==============================
+# FALLBACK (KHÔNG DÙNG AI)
+# ==============================
+def fallback_script(topic, vnindex_text):
+    print("⚠️ Dùng fallback script")
+
+    return f"""
+Nhịp đập thị trường...
+
+Hôm nay, thị trường chứng khoán ghi nhận diễn biến đáng chú ý...
+
+{vnindex_text}
+
+Dòng tiền đang có sự phân hóa mạnh giữa các nhóm ngành...
+
+Nhà đầu tư cần thận trọng trong các quyết định mua mới...
+Ưu tiên quản trị rủi ro...
+
+Đừng quên theo dõi kênh để cập nhật nhanh nhất diễn biến thị trường...
+"""
