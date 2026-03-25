@@ -12,10 +12,13 @@ CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 def send_message(text):
     res = requests.post(
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-        json={"chat_id": CHAT_ID, "text": text}
+        json={
+            "chat_id": CHAT_ID,
+            "text": text,
+            "parse_mode": "HTML"   # 🔥 hỗ trợ format đẹp
+        }
     )
     print("📩 send_message:", res.text)
-
 
 # 🔥 FIX CHUẨN
 def send_video(file):
