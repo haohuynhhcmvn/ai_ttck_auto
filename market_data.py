@@ -14,18 +14,21 @@ VN_STOCKS = [
 
 def get_vnindex():
     try:
-        # 👉 fallback vì Yahoo không support tốt VNINDEX
         df = yf.download("VNM", period="1d", progress=False)
 
-        close = df["Close"].iloc[-1]
-        open_price = df["Open"].iloc[-1]
+        if df.empty:
+            return {"close": "N/A", "change": "N/A"}
+
+        close = float(df["Close"].iloc[-1])
+        open_price = float(df["Open"].iloc[-1])
 
         return {
             "close": round(close, 2),
             "change": round(close - open_price, 2)
         }
 
-    except:
+    except Exception as e:
+        print("❌ VNINDEX lỗi:", e)
         return {"close": "N/A", "change": "N/A"}
 
 
