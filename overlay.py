@@ -59,7 +59,7 @@ def draw_overlay(data, size=(720, 1280)):
     draw.text((30, 20), "BẢN TIN CHỨNG KHOÁN", font=f_header, fill="black")
     
     today = datetime.now().strftime("%H:%M | %d/%m/%Y")
-    draw.text((500, 100), today, font=f_small, fill="black")
+    draw.text((450, 150), today, font=f_small, fill="black")
 
     # --- CONTAINER BACKGROUND ---
     # Vẽ một hình chữ nhật bo góc mờ để chứa bảng giá
@@ -86,7 +86,7 @@ def draw_overlay(data, size=(720, 1280)):
         y += 65
 
     # --- TOP LOSERS ---
-    y += 50
+    y += 150
     draw.text((50, y), "▼ TOP LOSERS", font=f_section, fill=C_DOWN)
     y += 70
 
