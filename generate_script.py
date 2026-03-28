@@ -130,13 +130,13 @@ DỮ LIỆU THỰC TẾ HÔM NAY:
 - Top giảm: {lose_text}.
 
 CẤU TRÚC SCRIPT:
-- VNINDEX: Tóm tắt xu hướng và tâm lý.
+- VNINDEX: Tóm tắt xu hướng và tâm lý trong bối cảnh tình hình kinh tế, chính trị và xã hội trên thế giới và tại việt nam.
 - DÒNG TIỀN: 2-3 ngành hút tiền nhất.
 - TOP 5 CỔ PHIẾU: Liệt kê mã và lý do ngắn gọn (ưu tiên nhóm tăng).
 - KỸ THUẬT: Tín hiệu bùng nổ hoặc đảo chiều.
 - CHIẾN LƯỢC: Lời khuyên nắm giữ hoặc quan sát.
 
-Hãy viết khoảng 200-250 từ theo phong cách MC tài chính cho bản tin dài khoảng 90 giây.
+Hãy viết khoảng 250-350 từ theo phong cách MC tài chính cho bản tin dài khoảng 90 giây.
 """
 
     print("🤖 Đang khởi tạo AI viết kịch bản...")
