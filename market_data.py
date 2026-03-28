@@ -1,5 +1,5 @@
 # ==============================
-# MARKET DATA PRO - FAST + STABLE
+# MARKET DATA (CLEAN - NO INDEX)
 # ==============================
 
 import yfinance as yf
@@ -7,7 +7,7 @@ import pandas as pd
 import time
 
 # ==============================
-# DANH SÁCH VN30
+# VN30 LIST
 # ==============================
 VN30 = [
     "ACB.VN","BCM.VN","BID.VN","BVH.VN","CTG.VN","FPT.VN","GAS.VN","GVR.VN",
@@ -34,66 +34,10 @@ def safe_download(ticker):
 
 
 # ==============================
-# VNINDEX (ƯU TIÊN THẬT → FALLBACK)
-# ==============================
-def get_vnindex():
-    # 🔥 thử index thật trước
-    try:
-        df = yf.download("^VNINDEX", period="2d", progress=False)
-
-        if df is not None and len(df) >= 2:
-            last = float(df["Close"].iloc[-1])
-            prev = float(df["Close"].iloc[-2])
-
-            return {
-                "close": round(last, 2),
-                "change": round(last - prev, 2)
-            }
-    except:
-        pass
-
-    # 🔥 fallback (VNM proxy)
-    df = safe_download("VNM.VN")
-
-    if df is None:
-        return {"close": "N/A", "change": "N/A"}
-
-    try:
-        last = float(df["Close"].iloc[-1])
-        prev = float(df["Close"].iloc[-2])
-
-        return {
-            "close": round(last, 2),
-            "change": round(last - prev, 2)
-        }
-    except:
-        return {"close": "N/A", "change": "N/A"}
-
-
-# ==============================
-# VN30 INDEX (GIẢ LẬP)
-# ==============================
-def get_vn30(df):
-    try:
-        if df.empty:
-            return {"close": "N/A", "change": "N/A"}
-
-        avg = df["change"].mean()
-
-        return {
-            "close": "N/A",
-            "change": round(avg, 2)
-        }
-    except:
-        return {"close": "N/A", "change": "N/A"}
-
-
-# ==============================
-# TOP STOCKS (BATCH - SIÊU NHANH)
+# TOP STOCKS (BATCH FAST)
 # ==============================
 def get_top_stocks(limit=20):
     try:
-        # 🔥 tải toàn bộ 1 lần
         raw = yf.download(
             tickers=" ".join(VN30),
             period="2d",
@@ -170,17 +114,14 @@ def get_top_stocks(limit=20):
 
 
 # ==============================
-# MAIN FUNCTION (KHÔNG ĐỔI OUTPUT)
+# MAIN FUNCTION (GIỮ FORMAT)
 # ==============================
 def get_market_data():
-    gainers, losers, df = get_top_stocks()
-
-    vnindex = get_vnindex()
-    vn30 = get_vn30(df)
+    gainers, losers, _ = get_top_stocks()
 
     return {
-        "vnindex": vnindex,
-        "vn30": vn30,
+        "vnindex": {},   # 🔥 giữ để không crash pipeline
+        "vn30": {},      # 🔥 giữ để không crash pipeline
         "gainers": gainers,
         "losers": losers
     }
