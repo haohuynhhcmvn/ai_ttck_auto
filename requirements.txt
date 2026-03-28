@@ -12,3 +12,4 @@ Pillow==9.5.0
 vnstock
 yfinance
 pandas
+num2words
