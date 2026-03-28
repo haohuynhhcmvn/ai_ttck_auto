@@ -42,7 +42,7 @@ def get_vnindex():
     → dùng proxy từ VNM (ổn định nhất)
     """
 
-    df = safe_download("VNINDEX.VN")
+    df = safe_download("^VNINDEX.VN")
 
     if df is None:
         return {"close": "N/A", "change": "N/A"}
