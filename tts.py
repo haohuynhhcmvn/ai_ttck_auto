@@ -1,3 +1,7 @@
+# ==============================
+# TTS PRO MAX (SMOOTH + FAST)
+# ==============================
+
 import edge_tts
 import asyncio
 import uuid
@@ -14,11 +18,25 @@ VOICES = [
     "vi-VN-NamMinhNeural"
 ]
 
-RATE = "+20%"
-PITCH = "+5Hz"
+RATE = "+15%"     # 🔥 giảm nhẹ cho tự nhiên hơn
+PITCH = "+2Hz"
+
+_loop = None  # 🔥 cache event loop
+
 
 # ==============================
-# NUMBER NORMALIZATION
+# GET EVENT LOOP (FAST)
+# ==============================
+def get_loop():
+    global _loop
+    if _loop is None:
+        _loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_loop)
+    return _loop
+
+
+# ==============================
+# NUMBER NORMALIZATION (TỰ NHIÊN)
 # ==============================
 
 def read_decimal(num_str):
@@ -26,12 +44,8 @@ def read_decimal(num_str):
     
     int_part = num2words(int(integer), lang='vi')
     
-    # đọc tự nhiên hơn: nhóm 2 số nếu dài
-    if len(decimal) >= 2:
-        groups = [decimal[i:i+2] for i in range(0, len(decimal), 2)]
-        dec_part = " ".join([num2words(int(g), lang='vi') for g in groups])
-    else:
-        dec_part = " ".join([num2words(int(d), lang='vi') for d in decimal])
+    # đọc từng số → tự nhiên hơn
+    dec_part = " ".join([num2words(int(d), lang='vi') for d in decimal])
     
     return f"{int_part} phẩy {dec_part}"
 
@@ -48,55 +62,55 @@ def convert_number(match):
 
 
 def normalize_numbers(text):
-    # % (phần trăm)
-    text = re.sub(r'(\d+(\.\d+)?)%', 
-                  lambda m: convert_number(m) + " phần trăm", 
+    # %
+    text = re.sub(r'(\d+(\.\d+)?)%',
+                  lambda m: convert_number(m) + " phần trăm",
                   text)
-    
-    # số có dấu phẩy (1,000,000)
-    text = re.sub(r'(\d{1,3}(,\d{3})+)', 
-                  lambda m: num2words(int(m.group().replace(",", "")), lang='vi'), 
+
+    # 1,000,000
+    text = re.sub(r'(\d{1,3}(,\d{3})+)',
+                  lambda m: num2words(int(m.group().replace(",", "")), lang='vi'),
                   text)
-    
+
     # số thường
     text = re.sub(r'\d+(\.\d+)?', convert_number, text)
-    
+
     return text
 
 
 # ==============================
-# TEXT CLEANING (TỐI ƯU GIỌNG ĐỌC)
+# TEXT CLEANING (TTS FRIENDLY)
 # ==============================
 
 def normalize_text(text):
     text = normalize_numbers(text)
-    
-    # đọc ký hiệu tài chính phổ biến
-    text = text.replace("VN-Index", "Vi En Index")
-    text = text.replace("HNX-Index", "Hát En Xờ Index")
-    text = text.replace("UPCOM", "Up Com")
-    
-    # pause tự nhiên
-    text = text.replace(",", ", <break time='200ms'/>")
-    text = text.replace(".", ". <break time='400ms'/>")
-    
-    return text
+
+    # tài chính
+    text = text.replace("VN-Index", "vi en index")
+    text = text.replace("HNX-Index", "hát en xờ index")
+    text = text.replace("UPCOM", "úp com")
+
+    # 🔥 nhịp đọc tự nhiên hơn
+    text = text.replace(",", " <break time='250ms'/> ")
+    text = text.replace(".", " <break time='500ms'/> ")
+
+    return text.strip()
 
 
 # ==============================
-# BUILD SSML
+# BUILD SSML (NATURAL)
 # ==============================
 
 def build_ssml(text, voice):
     return f"""
-    <speak version="1.0" xml:lang="vi-VN">
-        <voice name="{voice}">
-            <prosody rate="{RATE}" pitch="{PITCH}">
-                {text}
-            </prosody>
-        </voice>
-    </speak>
-    """
+<speak version="1.0" xml:lang="vi-VN">
+  <voice name="{voice}">
+    <prosody rate="{RATE}" pitch="{PITCH}">
+      {text}
+    </prosody>
+  </voice>
+</speak>
+"""
 
 
 # ==============================
@@ -105,51 +119,29 @@ def build_ssml(text, voice):
 
 async def tts_async(text, filename, voice):
     ssml = build_ssml(text, voice)
-    
+
     communicate = edge_tts.Communicate(
         ssml,
         voice=voice
     )
-    
+
     await communicate.save(filename)
 
 
 # ==============================
-# MAIN FUNCTION (PIPELINE ENTRY)
+# MAIN FUNCTION
 # ==============================
 
 def text_to_speech(text, voice=None):
-    """
-    INPUT: raw text
-    OUTPUT: mp3 file path
-    """
-    
-    # 1. normalize text
     text = normalize_text(text)
-    
-    # 2. chọn giọng (A/B test)
+
+    # 🔥 chọn giọng ổn định (có thể fix để A/B test)
     if not voice:
         voice = random.choice(VOICES)
-    
-    # 3. tạo filename unique
+
     filename = f"voice_{uuid.uuid4().hex}.mp3"
-    
-    # 4. run async (safe cho mọi môi trường)
-    try:
-        asyncio.run(tts_async(text, filename, voice))
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(tts_async(text, filename, voice))
-    
+
+    loop = get_loop()
+    loop.run_until_complete(tts_async(text, filename, voice))
+
     return filename
-
-
-# ==============================
-# TEST
-# ==============================
-
-if __name__ == "__main__":
-    sample = "NVL tăng 2.35% lên 12,500 đồng. VN-Index đạt 1234.56 điểm"
-    file = text_to_speech(sample)
-    print("Generated:", file)
