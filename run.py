@@ -114,7 +114,8 @@ def process_video(topic, index):
     # --- BƯỚC 10: TELEGRAM NOTIFICATION ---
     print("🔟 Đang gửi thông báo Telegram...")
     try:
-        full_msg = f"🎬 **Video mới đã sẵn sàng!**\n\n📌 Chủ đề: {topic}\n🔗 Link: {url}\n\n📝 **Caption:**\n{content}"
+        #full_msg = f"🎬 **Video mới đã sẵn sàng!**\n\n📌 Chủ đề: {topic}\n🔗 Link: {url}\n\n📝 **Caption:**\n{content}"
+        full_msg = f"{content}"
         send_message(full_msg)
         send_video(output)
     except Exception as e:
