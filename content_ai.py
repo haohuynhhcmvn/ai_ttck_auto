@@ -19,26 +19,44 @@ GEMINI_MODEL = "gemini-2.5-flash"
 # ==============================
 # LLM CALLS (Giữ nguyên logic gọi API của bạn)
 # ==============================
-def call_qwen_social(prompt, retry=2):
+def call_qwen_social(prompt, retry=3): # Tăng lên 3 lần thử
     url = "https://integrate.api.nvidia.com/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {NVIDIA_API_KEY}", 
+        "Content-Type": "application/json"
+    }
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là chuyên gia sáng tạo nội dung mạng xã hội mảng tài chính. Viết nội dung thu hút, sử dụng emoji thông minh."},
+            {"role": "system", "content": "Bạn là chuyên gia sáng tạo nội dung tài chính. Viết nội dung ngắn gọn, thu hút kèm emoji."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 800
+        "max_tokens": 1000 # Tăng nhẹ để tránh bị cắt cụt content
     }
+    
     for i in range(retry):
         try:
-            res = requests.post(url, headers=headers, json=payload, timeout=25)
+            # Tăng timeout lên 60s vì Qwen 122B xử lý Tiếng Việt khá nặng
+            res = requests.post(url, headers=headers, json=payload, timeout=60) 
+            
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"]
+            
+            elif res.status_code == 429:
+                print(f"⏳ Đang bị giới hạn (Rate Limit), nghỉ 10s trước khi thử lại lần {i+1}...")
+                time.sleep(10)
+            else:
+                print(f"⚠️ Qwen trả về lỗi mã: {res.status_code}")
+                
+        except requests.exceptions.Timeout:
+            print(f"🕒 Lần {i+1}: API phản hồi quá chậm (Timeout). Đang thử lại...")
         except Exception as e:
-            print(f"⚠️ Qwen Social lỗi: {e}")
-            time.sleep(2)
+            print(f"❌ Lần {i+1} lỗi: {e}")
+        
+        # Nghỉ tăng dần giữa các lần retry (2s, 4s, 8s...)
+        time.sleep(2 * (i + 1))
+        
     return None
 
 def call_gemini_social(prompt, retry=2):
