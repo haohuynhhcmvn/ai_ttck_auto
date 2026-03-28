@@ -1,39 +1,32 @@
 # ==============================
-# RENDER VIDEO PRO MAX (FIXED)
+# RENDER VIDEO PRO MAX (ULTRA FAST)
 # ==============================
 
 import subprocess
 import os
 import random
-from moviepy.editor import *
-from overlay import create_overlay
+from moviepy.editor import AudioFileClip
+from overlay import draw_overlay
+from PIL import Image
 
 
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
-    print("🎬 Render video 9:16 (FFmpeg PRO MAX)...")
+    print("🎬 Render video PRO MAX (ULTRA FAST)...")
 
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
     # ==========================
-    # OVERLAY
+    # OVERLAY → PNG (SIÊU NHẸ)
     # ==========================
     overlay_path = None
 
     if market_data:
         try:
-            overlay_clip = create_overlay(market_data, duration)
+            img = draw_overlay(market_data)
+            overlay_path = "overlay.png"
 
-            overlay_path = "overlay.mp4"
-            overlay_clip.write_videofile(
-                overlay_path,
-                fps=30,
-                codec="libx264",
-                audio=False,
-                preset="ultrafast"   # 🔥 tăng tốc
-            )
-
-            overlay_clip.close()
+            Image.fromarray(img).save(overlay_path)
 
         except Exception as e:
             print("⚠️ overlay lỗi:", e)
@@ -56,15 +49,17 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         ]
 
     # ==========================
-    # FILTER
+    # BUILD FILTER
     # ==========================
     filters = []
 
+    # chuẩn 9:16
     filters.append(
-        "[0:v]fps=24,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280[bg]"
+        "[0:v]scale=720:1280:force_original_aspect_ratio=increase,"
+        "crop=720:1280[bg]"
     )
 
-    # overlay
+    # overlay PNG
     if overlay_path:
         filters.append("[bg][1:v]overlay=0:0[tmp1]")
         last_video = "[tmp1]"
@@ -73,12 +68,12 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         last_video = "[bg]"
         audio_index = 1
 
-    # subtitle
+    # subtitle ASS
     if subtitles and subtitles.endswith(".ass"):
         safe_sub = subtitles.replace("\\", "/")
         filters.append(f"{last_video}ass={safe_sub}[v]")
     else:
-        filters.append(f"{last_video}null[v]")
+        filters.append(f"{last_video}[v]")
 
     filter_complex = ";".join(filters)
 
@@ -92,7 +87,7 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
     ]
 
     if overlay_path:
-        cmd += ["-i", overlay_path]
+        cmd += ["-loop", "1", "-i", overlay_path]
 
     cmd += [
         "-i", audio_path,
@@ -102,13 +97,13 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         "-map", "[v]",
         "-map", f"{audio_index}:a",
 
-        "-t", str(duration),   # 🔥 FIX QUAN TRỌNG
+        "-t", str(duration),
         "-shortest",
 
-        "-r", "24",
-
+        # 🔥 encode nhanh hơn nhiều
         "-c:v", "libx264",
-        "-preset", "ultrafast",   # 🔥 nhanh hơn
+        "-preset", "ultrafast",
+        "-tune", "fastdecode",
         "-crf", "23",
         "-pix_fmt", "yuv420p",
 
