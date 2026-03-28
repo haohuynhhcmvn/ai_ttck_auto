@@ -1,5 +1,5 @@
 # ==============================
-# TTS PRO MAX (SMOOTH + FAST)
+# TTS PRO MAX (STABLE + CLEAN)
 # ==============================
 
 import edge_tts
@@ -9,23 +9,19 @@ import re
 from num2words import num2words
 import random
 
-# ==============================
-# CONFIG
-# ==============================
-
 VOICES = [
     "vi-VN-HoaiMyNeural",
     "vi-VN-NamMinhNeural"
 ]
 
-RATE = "+15%"     # 🔥 giảm nhẹ cho tự nhiên hơn
-PITCH = "+2Hz"
+RATE = "+12%"
+PITCH = "+0Hz"
 
-_loop = None  # 🔥 cache event loop
+_loop = None
 
 
 # ==============================
-# GET EVENT LOOP (FAST)
+# EVENT LOOP
 # ==============================
 def get_loop():
     global _loop
@@ -36,23 +32,31 @@ def get_loop():
 
 
 # ==============================
-# NUMBER NORMALIZATION (TỰ NHIÊN)
+# CLEAN TEXT (QUAN TRỌNG NHẤT)
 # ==============================
+def clean_text(text):
+    # bỏ ký tự rác
+    text = re.sub(r"[^\w\s.,%]", "", text)
 
+    # bỏ dấu ... dư
+    text = re.sub(r"\.{2,}", ".", text)
+
+    # bỏ nhiều space
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
+
+
+# ==============================
+# NUMBER NORMALIZATION
+# ==============================
 def read_decimal(num_str):
     integer, decimal = num_str.split(".")
-    
-    int_part = num2words(int(integer), lang='vi')
-    
-    # đọc từng số → tự nhiên hơn
-    dec_part = " ".join([num2words(int(d), lang='vi') for d in decimal])
-    
-    return f"{int_part} phẩy {dec_part}"
+    return f"{num2words(int(integer), lang='vi')} phẩy {' '.join(num2words(int(d), lang='vi') for d in decimal)}"
 
 
 def convert_number(match):
     num = match.group()
-    
     try:
         if "." in num:
             return read_decimal(num)
@@ -62,53 +66,60 @@ def convert_number(match):
 
 
 def normalize_numbers(text):
-    # %
     text = re.sub(r'(\d+(\.\d+)?)%',
                   lambda m: convert_number(m) + " phần trăm",
                   text)
 
-    # 1,000,000
     text = re.sub(r'(\d{1,3}(,\d{3})+)',
                   lambda m: num2words(int(m.group().replace(",", "")), lang='vi'),
                   text)
 
-    # số thường
     text = re.sub(r'\d+(\.\d+)?', convert_number, text)
 
     return text
 
 
 # ==============================
-# TEXT CLEANING (TTS FRIENDLY)
+# FINANCIAL TEXT FIX
 # ==============================
-
-def normalize_text(text):
-    text = normalize_numbers(text)
-
-    # tài chính
+def normalize_finance(text):
     text = text.replace("VN-Index", "vi en index")
     text = text.replace("HNX-Index", "hát en xờ index")
     text = text.replace("UPCOM", "úp com")
-
-    # 🔥 nhịp đọc tự nhiên hơn
-    text = text.replace(",", " <break time='250ms'/> ")
-    text = text.replace(".", " <break time='500ms'/> ")
-
-    return text.strip()
+    return text
 
 
 # ==============================
-# BUILD SSML (NATURAL)
+# ADD PAUSE (NHẸ)
 # ==============================
+def add_pause(text):
+    text = text.replace(".", ". <break time='400ms'/>")
+    text = text.replace(",", ", <break time='200ms'/>")
+    return text
 
+
+# ==============================
+# FINAL NORMALIZE
+# ==============================
+def normalize_text(text):
+    text = clean_text(text)
+    text = normalize_finance(text)
+    text = normalize_numbers(text)
+    text = add_pause(text)
+    return text
+
+
+# ==============================
+# BUILD SSML
+# ==============================
 def build_ssml(text, voice):
     return f"""
 <speak version="1.0" xml:lang="vi-VN">
-  <voice name="{voice}">
-    <prosody rate="{RATE}" pitch="{PITCH}">
-      {text}
-    </prosody>
-  </voice>
+    <voice name="{voice}">
+        <prosody rate="{RATE}" pitch="{PITCH}">
+            {text}
+        </prosody>
+    </voice>
 </speak>
 """
 
@@ -116,26 +127,21 @@ def build_ssml(text, voice):
 # ==============================
 # TTS CORE
 # ==============================
-
 async def tts_async(text, filename, voice):
     ssml = build_ssml(text, voice)
 
-    communicate = edge_tts.Communicate(
-        ssml,
-        voice=voice
-    )
+    # 🔥 KHÔNG truyền voice ở đây nữa
+    communicate = edge_tts.Communicate(ssml)
 
     await communicate.save(filename)
 
 
 # ==============================
-# MAIN FUNCTION
+# MAIN
 # ==============================
-
 def text_to_speech(text, voice=None):
     text = normalize_text(text)
 
-    # 🔥 chọn giọng ổn định (có thể fix để A/B test)
     if not voice:
         voice = random.choice(VOICES)
 
