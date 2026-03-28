@@ -5,208 +5,154 @@
 import requests
 import os
 import time
+import re
 from datetime import datetime
 from market_data import get_market_data
 from num2words import num2words
-import re
 
 # ==============================
-# API KEYS
+# CONFIG & API KEYS
 # ==============================
-
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
+# Model names
+QWEN_MODEL = "qwen/qwen2.5-72b-instruct" # NVIDIA NIM thường dùng bản này ổn định
+GEMINI_MODEL = "gemini-1.5-flash"
+
 # ==============================
-# NUMBER NORMALIZATION
+# NUMBER NORMALIZATION (FIXED)
 # ==============================
+def read_decimal_or_int(num_str):
+    num_str = num_str.replace(",", "") # Xóa dấu phẩy phân cách hàng ngàn nếu có
+    try:
+        if '.' in num_str:
+            integer, decimal = num_str.split(".")
+            int_part = num2words(int(integer), lang='vi')
+            dec_part = ' '.join([num2words(int(d), lang='vi') for d in decimal])
+            return f"{int_part} phẩy {dec_part}"
+        else:
+            return num2words(int(num_str), lang='vi')
+    except:
+        return num_str
 
 def normalize_numbers(text):
-    # % -> chữ
+    # 1. Xử lý phần trăm: 15.5% -> mười lăm phẩy năm phần trăm
     text = re.sub(r'(\d+(\.\d+)?)%', 
-                  lambda m: read_decimal_or_int(m.group()) + " phần trăm",
+                  lambda m: read_decimal_or_int(m.group(1)) + " phần trăm", 
                   text)
-    # 1,000,000 -> chữ
+    
+    # 2. Xử lý số có dấu phẩy hàng ngàn: 1,200 -> một nghìn hai trăm
     text = re.sub(r'(\d{1,3}(?:,\d{3})+)',
                   lambda m: num2words(int(m.group().replace(",", "")), lang='vi'),
                   text)
-    # số thường
+    
+    # 3. Xử lý số thập phân và số nguyên còn lại
     text = re.sub(r'\d+(\.\d+)?', lambda m: read_decimal_or_int(m.group()), text)
     return text
 
-def read_decimal_or_int(num_str):
-    if '.' in num_str:
-        integer, decimal = num_str.split(".")
-        int_part = num2words(int(integer), lang='vi')
-        dec_part = ' '.join([num2words(int(d), lang='vi') for d in decimal])
-        return f"{int_part} phẩy {dec_part}"
-    else:
-        return num2words(int(num_str), lang='vi')
-
-# ==============================
-# CLEAN TEXT (TTS FRIENDLY)
-# ==============================
-
 def optimize_for_tts(text):
-    text = text.strip()
-    # loại bỏ ký tự đặc biệt
-    text = re.sub(r'[<>{}\[\]/\\*^$#@~]', '', text)
-    # fix nhịp câu
-    text = text.replace("...", ". ")
-    text = text.replace(",", ", ")
-    text = text.replace(".", ". ")
+    # Xóa các tiêu đề mục lục (VNINDEX, DÒNG TIỀN...) nếu bạn không muốn MC đọc to tên mục
+    # Nhưng trong TikTok, MC thường đọc tiêu đề để chuyển cảnh, nên tôi giữ lại và làm sạch
+    text = re.sub(r'[<>{}\[\]/\\*^$#@~_]', '', text)
+    
+    # Fix ngắt nghỉ: Dấu chấm/phẩy phải có khoảng trắng đằng sau để TTS nhận diện
+    text = text.replace(".", ". ").replace(",", ", ").replace("...", "... ")
     text = re.sub(r'\s+', ' ', text)
+    
+    # Chuyển các ký hiệu đặc biệt thành chữ
+    text = text.replace("%", " phần trăm")
     return text.strip()
 
 # ==============================
-# CALL QWEN
+# LLM CALLS (QWEN & GEMINI)
 # ==============================
-
-def call_qwen(prompt, retry=3):
+def call_qwen(prompt, retry=2):
     url = "https://integrate.api.nvidia.com/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {NVIDIA_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
     payload = {
-        "model": "qwen/qwen3.5-122b-a10b",
+        "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là MC tài chính chuyên nghiệp, viết kịch bản video ngắn cực cuốn hút, dễ đọc cho TTS."},
+            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-10 từ. Kết thúc bằng dấu chấm. Không dùng ký tự lạ."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.7,
-        "max_tokens": 400
+        "temperature": 0.6,
+        "max_tokens": 600
     }
     for i in range(retry):
         try:
-            res = requests.post(url, headers=headers, json=payload, timeout=30)
-            if res.status_code != 200:
-                raise Exception(res.text)
-            data = res.json()
-            return data["choices"][0]["message"]["content"]
+            res = requests.post(url, headers=headers, json=payload, timeout=25)
+            if res.status_code == 200:
+                return res.json()["choices"][0]["message"]["content"]
         except Exception as e:
-            print(f"⚠️ Qwen lỗi lần {i+1}: {e}")
-            time.sleep(2 * (i+1))
+            print(f"⚠️ Qwen lỗi: {e}")
+            time.sleep(2)
     return None
 
-# ==============================
-# CALL GEMINI FALLBACK
-# ==============================
-
-def call_gemini(payload, retry=3):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+def call_gemini(prompt, retry=2):
+    # URL cho Gemini 1.5 Flash
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
     for i in range(retry):
         try:
-            res = requests.post(url, json=payload, timeout=30)
-            if res.status_code != 200:
-                raise Exception(res.text)
-            data = res.json()
-            if "candidates" not in data:
-                raise Exception(data)
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+            res = requests.post(url, json=payload, timeout=25)
+            if res.status_code == 200:
+                return res.json()["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
-            print(f"⚠️ Gemini lỗi lần {i+1}: {e}")
-            time.sleep(2 * (i+1))
+            print(f"⚠️ Gemini lỗi: {e}")
+            time.sleep(2)
     return None
-
-# ==============================
-# FALLBACK SCRIPT
-# ==============================
-
-def fallback_script(topic, gain_text, lose_text):
-    return f"""
-Dòng tiền đang xoay chiều.
-Top tăng nổi bật là {gain_text}.
-Nhưng phía giảm đang rất nguy hiểm.
-{lose_text} đang kéo thị trường xuống.
-Nhiều người đang mắc sai lầm.
-Vào lệnh sai thời điểm.
-Tài khoản có thể bốc hơi nhanh.
-Nhưng cơ hội vẫn còn.
-Ai nhanh sẽ đi trước.
-"""
 
 # ==============================
 # GENERATE SCRIPT MAIN
 # ==============================
+def generate_script(topic, market_data=None):
+    """
+    Nhận topic và dữ liệu thị trường thực tế để viết script.
+    """
+    if not market_data:
+        market_data = get_market_data()
 
-def generate_script(topic):
-    today = datetime.now().strftime("%d/%m/%Y")
-    data = get_market_data()
-
-    gainers = data.get("gainers", [])[:3]
-    losers = data.get("losers", [])[:3]
-
-    gain_text = ", ".join([f"{s} {v}%" for s,v in gainers]) if gainers else "Không có dữ liệu"
-    lose_text = ", ".join([f"{s} {v}%" for s,v in losers]) if losers else "Không có dữ liệu"
-
-    # ==============================
-    # PROMPT OPTIMIZED
-    # ==============================
+    gain_text = market_data.get("gain_text", "Đang cập nhật")
+    lose_text = market_data.get("lose_text", "Đang cập nhật")
 
     prompt = f"""
-Bạn là MC bản tin tài chính TikTok.
-Viết script 5 phần, dễ đọc cho TTS, mỗi câu 5–10 từ.
-Mỗi câu kết thúc bằng dấu chấm.
-Hook cực mạnh ngay câu đầu: cơ hội hoặc rủi ro.
-Không ký tự đặc biệt, không hashtag.
+Viết script video TikTok tài chính chuyên nghiệp.
+YÊU CẦU CỰC NGHIÊM NGẶT:
+1. Mỗi câu chỉ từ 5 đến 10 từ.
+2. Kết thúc mỗi câu bằng dấu chấm.
+3. Không sử dụng dấu phẩy giữa câu (thay bằng dấu chấm nếu cần ngắt).
+4. Không dùng hashtag, không dùng biểu tượng cảm xúc.
+5. Hook ngay câu đầu về: {topic}.
 
-Top tăng: {gain_text}.
-Top giảm: {lose_text}.
-Chủ đề: {topic}.
+DỮ LIỆU THỰC TẾ HÔM NAY:
+- Top tăng: {gain_text}.
+- Top giảm: {lose_text}.
 
-Phần 1 VNINDEX: Tóm tắt diễn biến chỉ số. Xu hướng, độ rộng, thanh khoản, tâm lý nhà đầu tư.
-Phần 2 DÒNG TIỀN: Ngành hút tiền hôm nay. Chọn tối đa 3 ngành: Ngân hàng. Chứng khoán. Thép. Dầu khí. Bất động sản. Bán lẻ. Công nghệ.
-Phần 3 TOP 5 CỔ PHIẾU: Chọn 5 cổ phiếu VN30 tăng nổi bật, thanh khoản cao, tín hiệu kỹ thuật tích cực.
-Phần 4 TÍN HIỆU KỸ THUẬT: Nếu có breakout, tăng mạnh thanh khoản, đảo chiều, nêu ngắn gọn.
-Phần 5 CHIẾN LƯỢC: Gợi ý nắm giữ, quan sát, mua khi điều chỉnh, chốt lời. Không mua bán cụ thể.
+CẤU TRÚC SCRIPT:
+- VNINDEX: Tóm tắt xu hướng và tâm lý.
+- DÒNG TIỀN: 2-3 ngành hút tiền nhất.
+- TOP 5 CỔ PHIẾU: Liệt kê mã và lý do ngắn gọn (ưu tiên nhóm tăng).
+- KỸ THUẬT: Tín hiệu bùng nổ hoặc đảo chiều.
+- CHIẾN LƯỢC: Lời khuyên nắm giữ hoặc quan sát.
 
-Tổng script 200–250 từ. Ngắn gọn, chuyên nghiệp. Không giải thích dài dòng.
-Định dạng output:
-
-BẢN TIN THỊ TRƯỜNG CHỨNG KHOÁN
-VNINDEX
-<phân tích ngắn>
-DÒNG TIỀN
-<liệt kê 2–3 ngành>
-TOP CỔ PHIẾU
-1. Mã – lý do
-2. Mã – lý do
-3. Mã – lý do
-4. Mã – lý do
-5. Mã – lý do
-TÍN HIỆU KỸ THUẬT
-<ngắn>
-CHIẾN LƯỢC
-<ngắn>
+Hãy viết theo phong cách MC tài chính bản tin 60 giây.
 """
 
-    # ==============================
-    # 1. QWEN
-    # ==============================
+    print("🤖 Đang khởi tạo AI viết kịch bản...")
+    script = call_qwen(prompt) or call_gemini(prompt)
 
-    script = call_qwen(prompt)
-    if script:
-        print("✅ Dùng Qwen")
-        script = normalize_numbers(script)
-        script = optimize_for_tts(script)
-        return script
+    if not script:
+        print("⚠️ Cả 2 AI đều lỗi, dùng kịch bản dự phòng.")
+        script = f"Thị trường hôm nay có biến động lớn. Nhóm tăng nổi bật gồm {gain_text}. Tuy nhiên áp lực bán vẫn hiện hữu tại {lose_text}. Nhà đầu tư cần hết sức cẩn trọng. Hãy theo dõi sát vùng hỗ trợ."
 
-    # ==============================
-    # 2. GEMINI FALLBACK
-    # ==============================
+    # Xử lý hậu kỳ cho TTS
+    script = normalize_numbers(script)
+    script = optimize_for_tts(script)
 
-    payload = {"contents":[{"parts":[{"text": prompt}]}]}
-    script = call_gemini(payload)
-    if script:
-        print("⚠️ Fallback Gemini")
-        script = normalize_numbers(script)
-        script = optimize_for_tts(script)
-        return script
+    return script
 
-    # ==============================
-    # 3. FALLBACK HARD
-    # ==============================
-
-    print("⚠️ Dùng fallback script")
-    return fallback_script(topic, gain_text, lose_text)
+# --- TEST ---
+if __name__ == "__main__":
+    test_topic = "Thị trường bùng nổ sau chuỗi ngày giảm"
+    print(generate_script(test_topic))
