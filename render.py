@@ -6,115 +6,116 @@ import subprocess
 import os
 import random
 from moviepy.editor import AudioFileClip
-from overlay import draw_overlay
 from PIL import Image
 
+# Giả định bạn đã có file overlay.py với hàm draw_overlay
+try:
+    from overlay import draw_overlay
+except ImportError:
+    print("⚠️ Không tìm thấy module overlay. Hãy đảm bảo file overlay.py tồn tại.")
+    def draw_overlay(data): return None
 
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
-    print("🎬 Render video PRO MAX (ULTRA FAST)...")
+    print(f"🎬 Đang render video: {output}...")
 
+    # Lấy thời lượng audio chính xác
     audio = AudioFileClip(audio_path)
     duration = audio.duration
+    audio.close() # Giải phóng file để FFmpeg truy cập
 
     # ==========================
-    # OVERLAY → PNG (SIÊU NHẸ)
+    # 1. TẠO OVERLAY (PNG)
     # ==========================
-    overlay_path = None
+    overlay_path = f"temp_overlay_{random.randint(100,999)}.png"
+    has_overlay = False
 
     if market_data:
         try:
-            img = draw_overlay(market_data)
-            overlay_path = "overlay.png"
-
-            Image.fromarray(img).save(overlay_path)
-
+            img_array = draw_overlay(market_data)
+            if img_array is not None:
+                Image.fromarray(img_array).save(overlay_path)
+                has_overlay = True
         except Exception as e:
-            print("⚠️ overlay lỗi:", e)
+            print(f"⚠️ Lỗi vẽ overlay: {e}")
 
     # ==========================
-    # BACKGROUND
+    # 2. CẤU HÌNH INPUT BACKGROUND
     # ==========================
+    # Nếu có background.mp4 thì loop, nếu không thì dùng màu đen
     if os.path.exists("background.mp4"):
-        start_time = random.uniform(0, 5)
-
-        bg_input = [
-            "-ss", str(start_time),
-            "-stream_loop", "-1",
-            "-i", "background.mp4"
-        ]
+        start_time = random.uniform(0, 10) # Random đoạn bắt đầu cho đỡ trùng lặp
+        bg_input = ["-ss", str(start_time), "-stream_loop", "-1", "-i", "background.mp4"]
     else:
-        bg_input = [
-            "-f", "lavfi",
-            "-i", "color=c=black:s=720x1280:r=24"
-        ]
+        bg_input = ["-f", "lavfi", "-i", f"color=c=black:s=720x1280:r=30"]
 
     # ==========================
-    # BUILD FILTER
+    # 3. XỬ LÝ ĐƯỜNG DẪN SUBTITLE (QUAN TRỌNG)
     # ==========================
-    filters = []
+    # FFmpeg filter 'ass' rất kén đường dẫn trên Windows (cần double escape)
+    safe_sub_path = subtitles.replace("\\", "/").replace(":", "\\:") if subtitles else None
 
-    # chuẩn 9:16
-    filters.append(
-        "[0:v]scale=720:1280:force_original_aspect_ratio=increase,"
-        "crop=720:1280[bg]"
-    )
+    # ==========================
+    # 4. BUILD FILTER COMPLEX
+    # ==========================
+    # Input 0: Background
+    # Input 1: Overlay PNG (nếu có)
+    # Input 2 hoặc 1: Audio
+    
+    filter_parts = []
+    # Scale và Crop background về chuẩn 9:16 (720x1280)
+    filter_parts.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280[bg]")
+    
+    last_v = "[bg]"
+    audio_idx = 1
 
-    # overlay PNG
-    if overlay_path:
-        filters.append("[bg][1:v]overlay=0:0[tmp1]")
-        last_video = "[tmp1]"
-        audio_index = 2
+    if has_overlay:
+        # Đè overlay lên background
+        filter_parts.append(f"{last_v}[1:v]overlay=0:0[tmp_v]")
+        last_v = "[tmp_v]"
+        audio_idx = 2 # Audio sẽ là input thứ 3 (index 2)
+
+    if safe_sub_path:
+        # Add Subtitles
+        filter_parts.append(f"{last_v}ass='{safe_sub_path}'[v]")
     else:
-        last_video = "[bg]"
-        audio_index = 1
+        filter_parts.append(f"{last_v}copy[v]")
 
-    # subtitle ASS
-    if subtitles and subtitles.endswith(".ass"):
-        safe_sub = subtitles.replace("\\", "/")
-        filters.append(f"{last_video}ass={safe_sub}[v]")
-    else:
-        filters.append(f"{last_video}[v]")
-
-    filter_complex = ";".join(filters)
+    filter_complex = ";".join(filter_parts)
 
     # ==========================
-    # BUILD CMD
+    # 5. EXECUTE FFMPEG
     # ==========================
-    cmd = [
-        "ffmpeg",
-        "-y",
-        *bg_input,
-    ]
+    cmd = ["ffmpeg", "-y"]
+    cmd += bg_input # Input 0
+    
+    if has_overlay:
+        cmd += ["-loop", "1", "-i", overlay_path] # Input 1
 
-    if overlay_path:
-        cmd += ["-loop", "1", "-i", overlay_path]
+    cmd += ["-i", audio_path] # Input 1 hoặc 2
 
     cmd += [
-        "-i", audio_path,
-
         "-filter_complex", filter_complex,
-
         "-map", "[v]",
-        "-map", f"{audio_index}:a",
-
+        "-map", f"{audio_idx}:a",
         "-t", str(duration),
-        "-shortest",
-
-        # 🔥 encode nhanh hơn nhiều
         "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-tune", "fastdecode",
-        "-crf", "23",
-        "-pix_fmt", "yuv420p",
-
+        "-preset", "ultrafast", # Tốc độ tối đa
+        "-crf", "23",           # Cân bằng chất lượng/dung lượng
+        "-pix_fmt", "yuv420p",  # Đảm bảo xem được trên mọi điện thoại
         "-c:a", "aac",
         "-b:a", "128k",
-
+        "-shortest",            # Kết thúc khi audio hết
         output
     ]
 
-    print("⚙️ FFmpeg CMD:", " ".join(cmd))
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+        print(f"✅ Render thành công: {output}")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ FFmpeg Render Error: {e.stderr.decode()}")
+    finally:
+        # Dọn dẹp file tạm
+        if os.path.exists(overlay_path):
+            os.remove(overlay_path)
 
-    subprocess.run(cmd, check=True)
-
-    print("✅ Done video:", output)
+    return output
