@@ -1,5 +1,5 @@
 # ==============================
-# MAIN PIPELINE (FINAL STABLE)
+# MAIN PIPELINE (FINAL PRO)
 # ==============================
 
 # Import modules
@@ -25,29 +25,31 @@ def process_video(topic, index):
     # ==========================
     # 1. GENERATE SCRIPT
     # ==========================
-    print("1. AI viết nội dung")
+    print("1️⃣ AI viết nội dung")
     script = generate_script(topic)
+
     # 💾 lưu bản gốc
     save_text(script, "raw")
+
     # ==========================
-    # CLEAN TEXT (TRƯỚC TTS)
+    # 2. CLEAN TEXT (TTS)
     # ==========================
-    print("2. Clean text cho TTS")
+    print("2️⃣ Clean text cho TTS")
     clean_script = clean_text_for_tts(script)
-    
+
     # 💾 lưu bản clean
     save_text(clean_script, "clean")
 
     # ==========================
-    # 2. SOCIAL CONTENT
+    # 3. SOCIAL CONTENT
     # ==========================
-    print("2. Tạo content social")
+    print("3️⃣ Tạo content social")
     content = script_to_content(script, topic)
 
     # ==========================
-    # 3. MARKET DATA
+    # 4. MARKET DATA
     # ==========================
-    print("3. Lấy dữ liệu thị trường")
+    print("4️⃣ Lấy dữ liệu thị trường")
     try:
         market_data = get_market_data()
     except Exception as e:
@@ -55,42 +57,42 @@ def process_video(topic, index):
         market_data = {}
 
     # ==========================
-    # 4. TEXT TO SPEECH
+    # 5. TEXT TO SPEECH
     # ==========================
-    print("4. Tạo audio")
-    audio = text_to_speech(script)
+    print("5️⃣ Tạo audio")
+    audio = text_to_speech(clean_script)  # 🔥 dùng clean_script
 
     # ==========================
-    # 5. TRANSCRIBE
+    # 6. TRANSCRIBE
     # ==========================
-    print("5. Timestamp từng từ")
+    print("6️⃣ Timestamp từng từ")
     words = transcribe(audio)
 
-    # ==============================
-    # 6. SUBTITLE
-    # ==============================
-    print("6. Tạo subtitle")
+    # ==========================
+    # 7. SUBTITLE (ASS)
+    # ==========================
+    print("7️⃣ Tạo subtitle")
     ass_file = create_subtitles(words)
-    
+
     # ==========================
-    # 7. RENDER VIDEO
+    # 8. RENDER VIDEO
     # ==========================
-    print("7. Render video")
+    print("8️⃣ Render video")
     output = f"output_{index}.mp4"
 
     render_video(
-    audio,
-    ass_file,   # 🔥 đổi từ subs → ass_file
-    output,
-    topic,
-    market_data,
-    script
+        audio,
+        ass_file,   # 🔥 dùng ASS subtitle
+        output,
+        topic,
+        market_data,
+        script
     )
 
     # ==========================
-    # 8. UPLOAD YOUTUBE
+    # 9. UPLOAD YOUTUBE
     # ==========================
-    print("8. Upload YouTube")
+    print("9️⃣ Upload YouTube")
     try:
         url = upload_video(output)
     except Exception as e:
@@ -98,9 +100,9 @@ def process_video(topic, index):
         url = "Upload lỗi"
 
     # ==========================
-    # 9. TELEGRAM
+    # 10. TELEGRAM
     # ==========================
-    print("9. Gửi Telegram")
+    print("🔟 Gửi Telegram")
 
     try:
         send_message(f"🔥 {content}\n{url}")
@@ -125,7 +127,7 @@ def main():
     if not topics:
         topics = ["VNINDEX hôm nay có gì?"]
 
-    # giới hạn để tránh timeout GitHub
+    # 🔥 giới hạn để tránh timeout GitHub
     topics = topics[:1]
 
     for i, topic in enumerate(topics):
