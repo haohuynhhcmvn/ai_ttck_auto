@@ -1,7 +1,7 @@
 name: Auto Video Stock Production
 
 on:
-  schedule:
+  #schedule:
     # Cấu hình Cron chạy tự động theo giờ Việt Nam (UTC = Giờ VN - 7)
     # 1. 02:15 UTC (09:15 VN): Nhận định đầu phiên sáng
     #- cron: "15 2 * * 1-5"
