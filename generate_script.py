@@ -146,61 +146,24 @@ def generate_script(topic):
 
     prompt = f"""
 Bạn là MC bản tin tài chính TikTok.
-Viết script, mỗi câu ngắn 5–10 từ.
-Nhịp rõ ràng, dễ đọc cho TTS.
+Viết script 5 phần, dễ đọc cho TTS, mỗi câu 5–10 từ.
 Mỗi câu kết thúc bằng dấu chấm.
 Hook cực mạnh ngay câu đầu: cơ hội hoặc rủi ro.
 Không ký tự đặc biệt, không hashtag.
-Số liệu đọc dễ: 
+
 Top tăng: {gain_text}.
 Top giảm: {lose_text}.
 Chủ đề: {topic}.
-Nhiệm vụ của bạn là tạo bản tin thị trường cuối ngày gồm 5 phần:
-1. TỔNG QUAN VNINDEX
-Phân tích nhanh diễn biến chỉ số:
-- Xu hướng thị trường (tăng / tích lũy / điều chỉnh)
-- Độ rộng thị trường
-- Thanh khoản
-- Tâm lý nhà đầu tư
-Giới hạn: dưới 80 từ.
-2. DÒNG TIỀN THỊ TRƯỜNG
-Xác định các nhóm ngành hút tiền hôm nay như:
-- Ngân hàng
-- Chứng khoán
-- Thép
-- Dầu khí
-- Bất động sản
-- Bán lẻ
-- Công nghệ
-Nêu tối đa 3 nhóm ngành nổi bật.
-3. TOP 5 CỔ PHIẾU ĐÁNG CHÚ Ý
-Chọn 5 cổ phiếu trong VN30 dựa trên:
-- % tăng nổi bật
-- khối lượng giao dịch cao
-- vai trò kéo chỉ số
-- tín hiệu kỹ thuật tích cực
-Chỉ chọn cổ phiếu có:
-- % thay đổi > 0
-- thanh khoản cao
-4. TÍN HIỆU KỸ THUẬT ĐÁNG CHÚ Ý
-Nếu dữ liệu cho thấy:
-- breakout
-- tăng mạnh thanh khoản
-- đảo chiều
-hãy nêu ngắn gọn.
-5. CHIẾN LƯỢC CHO PHIÊN TỚI
-Đưa ra gợi ý chiến lược:
-- nắm giữ
-- quan sát
-- mua khi điều chỉnh
-- chốt lời
-Không đưa khuyến nghị mua bán cụ thể.
-Yêu cầu:
-- Văn phong giống bản tin công ty chứng khoán
-- Ngắn gọn, chuyên nghiệp
-- Tối thiểu 200 từ tối đa không quá 250 từ tổng bài
-- Không giải thích dài dòng
+
+Phần 1 VNINDEX: Tóm tắt diễn biến chỉ số. Xu hướng, độ rộng, thanh khoản, tâm lý nhà đầu tư.
+Phần 2 DÒNG TIỀN: Ngành hút tiền hôm nay. Chọn tối đa 3 ngành: Ngân hàng. Chứng khoán. Thép. Dầu khí. Bất động sản. Bán lẻ. Công nghệ.
+Phần 3 TOP 5 CỔ PHIẾU: Chọn 5 cổ phiếu VN30 tăng nổi bật, thanh khoản cao, tín hiệu kỹ thuật tích cực.
+Phần 4 TÍN HIỆU KỸ THUẬT: Nếu có breakout, tăng mạnh thanh khoản, đảo chiều, nêu ngắn gọn.
+Phần 5 CHIẾN LƯỢC: Gợi ý nắm giữ, quan sát, mua khi điều chỉnh, chốt lời. Không mua bán cụ thể.
+
+Tổng script 200–250 từ. Ngắn gọn, chuyên nghiệp. Không giải thích dài dòng.
 Định dạng output:
+
 BẢN TIN THỊ TRƯỜNG CHỨNG KHOÁN
 VNINDEX
 <phân tích ngắn>
