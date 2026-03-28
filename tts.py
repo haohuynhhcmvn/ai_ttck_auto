@@ -42,25 +42,33 @@ def get_loop():
 def read_decimal(num_str):
     integer, decimal = num_str.split(".")
     int_part = num2words(int(integer), lang="vi")
+    # Đọc từng chữ số sau dấu phẩy (vd: 05 -> không năm)
     dec_part = " ".join(num2words(int(d), lang="vi") for d in decimal)
     return f"{int_part} phẩy {dec_part}"
 
-def convert_number(match):
-    num = match.group()
+def process_number_str(num_str):
+    """Hàm lõi để xử lý chuỗi số thuần túy"""
     try:
-        if "." in num:
-            return read_decimal(num)
-        return num2words(int(num), lang="vi")
-    except:
-        return num
+        if "." in num_str:
+            return read_decimal(num_str)
+        return num2words(int(num_str), lang="vi")
+    except Exception:
+        return num_str
+
+def convert_number(match):
+    """Wrapper cho regex sub"""
+    return process_number_str(match.group())
 
 def normalize_numbers(text):
-    # %
-    text = re.sub(r'(\d+(\.\d+)?)%', lambda m: convert_number(m) + " phần trăm", text)
-    # 1,000,000
+    # 1. Xử lý phần trăm (chỉ lấy phần số ở group 1 để convert, sau đó thêm chữ 'phần trăm')
+    text = re.sub(r'(\d+(\.\d+)?)%', lambda m: process_number_str(m.group(1)) + " phần trăm", text)
+    
+    # 2. Xử lý số hàng ngàn có dấu phẩy (vd: 1,000,000)
     text = re.sub(r'(\d{1,3}(,\d{3})+)', lambda m: num2words(int(m.group().replace(",", "")), lang="vi"), text)
-    # số thường
+    
+    # 3. Xử lý các số thường & thập phân còn lại
     text = re.sub(r'\d+(\.\d+)?', convert_number, text)
+    
     return text
 
 # ==============================
@@ -68,22 +76,24 @@ def normalize_numbers(text):
 # ==============================
 
 def clean_text(text):
+    # Xử lý số liệu trước
     text = normalize_numbers(text)
 
-    # tên chỉ số tài chính
+    # Tên chỉ số tài chính
     text = text.replace("VN-Index", "vi en index")
     text = text.replace("HNX-Index", "hát en xờ index")
     text = text.replace("UPCOM", "úp com")
+    text = text.replace("VN30", "vi en ba mươi")
 
-    # loại bỏ ký tự nguy hiểm
+    # Loại bỏ ký tự nguy hiểm cho TTS
     text = re.sub(r'[<>{}]', '', text)
 
-    # 🔥 chuyển dấu phẩy và chấm thành pause tự nhiên
-    text = text.replace(",", "... ")   # 🔥 KHÔNG đọc "comma"
+    # 🔥 Chuyển dấu phẩy và chấm thành pause tự nhiên
+    text = text.replace(",", "... ")   # KHÔNG đọc "comma"
     text = text.replace(".", ". ")     # pause dài hơn cho chấm
-    text = text.replace("...", "... ") # fix triple-dot
+    text = text.replace("...", "... ") # fix triple-dot nếu bị trùng
 
-    # fix spacing
+    # Fix spacing (xóa khoảng trắng thừa)
     text = re.sub(r'\s+', ' ', text)
 
     return text.strip()
@@ -107,14 +117,17 @@ async def tts_async(text, filename, voice):
 # ==============================
 
 def text_to_speech(text, voice=None):
+    # Làm sạch văn bản và chuẩn hóa số liệu
     text = clean_text(text)
 
-    # chọn giọng random nếu chưa chỉ định
+    # Chọn giọng random nếu chưa chỉ định
     if not voice:
         voice = random.choice(list(VOICES.values()))
 
+    # Tạo tên file random để không bị ghi đè
     filename = f"voice_{uuid.uuid4().hex}.mp3"
 
+    # Chạy event loop an toàn
     loop = get_loop()
     loop.run_until_complete(tts_async(text, filename, voice))
 
