@@ -137,10 +137,10 @@ def generate_script(topic, market_data=None):
 
     prompt = f"""
 # ROLE: Bạn là Chuyên gia phân tích chiến lược tại một quỹ đầu tư lớn. 
-# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 90 giây (250-350 từ).
+# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 180 giây (450-5000 từ) sao cho phù hợp với tốc độ đọc 1.1x.
 
 # THÔNG SỐ KỸ THUẬT (CỰC KỲ NGHIÊM NGẶT):
-1. Độ dài câu: Bắt buộc từ 5 đến 10 từ. Không được ngắn hơn, không được dài hơn.
+1. Độ dài câu: Bắt buộc từ 5 đến 15 từ. Không được ngắn hơn, không được dài hơn.
 2. Dấu câu: Kết thúc mỗi câu bằng dấu chấm. Tuyệt đối không dùng dấu phẩy, dấu chấm phẩy hay dấu hai chấm.
 3. Định dạng: Không hashtag. Không biểu tượng cảm xúc. Chỉ dùng chữ và số.
 4. Nhịp điệu: MC cần đọc dứt khoát. Mỗi câu là một thông tin đắt giá.
@@ -157,7 +157,7 @@ PHẦN 1: HOOK (3-4 câu)
 
 PHẦN 2: BỐI CẢNH VNINDEX & VĨ MÔ (Viết dài, chiếm 40% dung lượng)
 - Liên kết chặt chẽ giữa chỉ số DXY, lợi suất trái phiếu Mỹ với tỷ giá trong nước.
-- Phân tích tâm lý đám đông trước các tin tức chính trị toàn cầu.
+- Phân tích tâm lý đám đông trước các tin tức kinh tế, lãi suất chính trị, lạm phát hoặc chiến tranh phạm vi toàn cầu và trong nước (dẫn chiếu 3 đến 5 tin tức nổi bật, nóng hổi).
 - Diễn giải tác động của dòng vốn ngoại đối với tâm lý khối nội. 
 - *Lưu ý: Chia nhỏ các phân tích phức tạp thành nhiều câu đơn 7 từ.*
 
