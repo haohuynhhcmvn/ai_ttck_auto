@@ -13,6 +13,7 @@ from render import render_video
 from upload_youtube import upload_video
 from telegram import send_message, send_video
 from market_data import get_market_data
+from text_utils import save_text, clean_text_for_tts
 
 
 # ==============================
@@ -26,6 +27,16 @@ def process_video(topic, index):
     # ==========================
     print("1. AI viết nội dung")
     script = generate_script(topic)
+    # 💾 lưu bản gốc
+    save_text(script, "raw")
+    # ==========================
+    # CLEAN TEXT (TRƯỚC TTS)
+    # ==========================
+    print("2. Clean text cho TTS")
+    clean_script = clean_text_for_tts(script)
+    
+    # 💾 lưu bản clean
+    save_text(clean_script, "clean")
 
     # ==========================
     # 2. SOCIAL CONTENT
