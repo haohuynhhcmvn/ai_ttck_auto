@@ -86,7 +86,7 @@ def draw_overlay(data, size=(720, 1280)):
         y += 65
 
     # --- TOP LOSERS ---
-    y += 40
+    y += 50
     draw.text((50, y), "▼ TOP LOSERS", font=f_section, fill=C_DOWN)
     y += 70
 
