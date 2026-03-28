@@ -13,3 +13,4 @@ vnstock
 yfinance
 pandas
 num2words
+pytz
