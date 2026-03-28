@@ -1,5 +1,5 @@
-# ==============================
-# TTS PRO STABLE (NO SSML BUG)
+# ============================== 
+# TTS PRO STABLE FIXED (NO COMMA BUG)
 # ==============================
 
 import edge_tts
@@ -20,10 +20,9 @@ VOICES = {
 
 RATE = "+10%"
 PITCH = "-5Hz"
-VOLUME = "+30%"   # 🔥 giống Colab → âm rõ hơn
+VOLUME = "+30%"   # âm lượng rõ
 
 _loop = None
-
 
 # ==============================
 # EVENT LOOP (GITHUB SAFE)
@@ -36,7 +35,6 @@ def get_loop():
         asyncio.set_event_loop(_loop)
     return _loop
 
-
 # ==============================
 # NUMBER NORMALIZATION
 # ==============================
@@ -44,12 +42,8 @@ def get_loop():
 def read_decimal(num_str):
     integer, decimal = num_str.split(".")
     int_part = num2words(int(integer), lang="vi")
-
-    # đọc từng số cho tự nhiên
     dec_part = " ".join(num2words(int(d), lang="vi") for d in decimal)
-
     return f"{int_part} phẩy {dec_part}"
-
 
 def convert_number(match):
     num = match.group()
@@ -60,56 +54,42 @@ def convert_number(match):
     except:
         return num
 
-
 def normalize_numbers(text):
     # %
-    text = re.sub(
-        r'(\d+(\.\d+)?)%',
-        lambda m: convert_number(m) + " phần trăm",
-        text
-    )
-
+    text = re.sub(r'(\d+(\.\d+)?)%', lambda m: convert_number(m) + " phần trăm", text)
     # 1,000,000
-    text = re.sub(
-        r'(\d{1,3}(,\d{3})+)',
-        lambda m: num2words(int(m.group().replace(",", "")), lang="vi"),
-        text
-    )
-
+    text = re.sub(r'(\d{1,3}(,\d{3})+)', lambda m: num2words(int(m.group().replace(",", "")), lang="vi"), text)
     # số thường
     text = re.sub(r'\d+(\.\d+)?', convert_number, text)
-
     return text
 
-
 # ==============================
-# CLEAN TEXT (QUAN TRỌNG NHẤT)
+# CLEAN TEXT (TTS FRIENDLY)
 # ==============================
 
 def clean_text(text):
     text = normalize_numbers(text)
 
-    # tài chính
+    # tên chỉ số tài chính
     text = text.replace("VN-Index", "vi en index")
     text = text.replace("HNX-Index", "hát en xờ index")
     text = text.replace("UPCOM", "úp com")
 
-    # 🔥 loại bỏ ký tự nguy hiểm
+    # loại bỏ ký tự nguy hiểm
     text = re.sub(r'[<>{}]', '', text)
 
-    # 🔥 pause bằng dấu câu (KHÔNG dùng SSML)
-    text = text.replace("...", ". ")
-    text = text.replace(",", ", ")
-    text = text.replace(".", ". ")
+    # 🔥 chuyển dấu phẩy và chấm thành pause tự nhiên
+    text = text.replace(",", "... ")   # 🔥 KHÔNG đọc "comma"
+    text = text.replace(".", ". ")     # pause dài hơn cho chấm
+    text = text.replace("...", "... ") # fix triple-dot
 
     # fix spacing
     text = re.sub(r'\s+', ' ', text)
 
     return text.strip()
 
-
 # ==============================
-# TTS CORE (KHÔNG SSML)
+# TTS CORE
 # ==============================
 
 async def tts_async(text, filename, voice):
@@ -120,24 +100,16 @@ async def tts_async(text, filename, voice):
         pitch=PITCH,
         volume=VOLUME
     )
-
     await communicate.save(filename)
-
 
 # ==============================
 # MAIN FUNCTION
 # ==============================
 
 def text_to_speech(text, voice=None):
-    """
-    INPUT: text
-    OUTPUT: mp3 path
-    """
-
-    # 🔥 clean chuẩn
     text = clean_text(text)
 
-    # 🔥 chọn giọng random (A/B test)
+    # chọn giọng random nếu chưa chỉ định
     if not voice:
         voice = random.choice(list(VOICES.values()))
 
