@@ -1,52 +1,73 @@
-name: Auto Video
+name: Auto Video Stock Production
 
 on:
-  # schedule:
-  #   - cron: "0 */6 * * *"
-  workflow_dispatch:
+  schedule:
+    # Cấu hình Cron chạy tự động theo giờ Việt Nam (UTC = Giờ VN - 7)
+    # 1. 02:15 UTC (09:15 VN): Nhận định đầu phiên sáng
+    #- cron: "15 2 * * 1-5"
+    # 2. 04:30 UTC (11:30 VN): Tổng kết phiên sáng
+    #- cron: "30 4 * * 1-5"
+    # 3. 08:15 UTC (15:15 VN): Tổng kết phiên ATC & Toàn ngày (Quan trọng nhất)
+    #- cron: "15 8 * * 1-5"
+    # 4. 13:00 UTC (20:00 VN): Bản tin tối nhận định ngày mai
+    #- cron: "0 13 * * 1-5"
+    
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công bất cứ lúc nào
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # Thiết lập biến môi trường toàn cục cho Múi giờ
+    env:
+      TZ: Asia/Ho_Chi_Minh
 
     steps:
-      - uses: actions/checkout@v3
+      # --- BƯỚC 1: LẤY CODE TỪ REPOSITORY ---
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      # 1. Setup Python tích hợp sẵn Caching cho pip
+      # --- BƯỚC 2: THIẾT LẬP PYTHON & CACHING ---
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-          cache: 'pip' # Tự động cache các thư viện dựa trên requirements.txt
+          cache: 'pip' # Lưu lại các thư viện đã tải để lần sau chạy nhanh hơn (giảm từ 2-3 phút xuống vài giây)
 
-      # 2. Cài đặt System Deps nhanh hơn (Gộp lệnh & No-recommends)
-      - name: Install system deps
+      # --- BƯỚC 3: CÀI ĐẶT CÁC PHẦN MỀM HỆ THỐNG ---
+      - name: Install System Dependencies (FFmpeg & ImageMagick)
         run: |
           sudo apt-get update -qq
+          # Cài đặt FFmpeg (xử lý video) và ImageMagick (xử lý ảnh/chữ)
           sudo apt-get install -y -qq ffmpeg imagemagick fonts-dejavu-core --no-install-recommends
-          # Fix policy ngay trong cùng 1 step để tiết kiệm thời gian khởi tạo step mới
-          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+          # MỞ KHÓA POLICY: Rất quan trọng để ImageMagick có quyền ghi đè chữ lên video/ảnh
+          sudo sed -i 's/policy domain="path" rights="none"/policy domain="path" rights="read,write"/' /etc/ImageMagick-6/policy.xml
 
-      # 3. Cài đặt Python deps (Sử dụng cache đã setup ở bước 1)
-      - name: Install Python deps
+      # --- BƯỚC 4: CÀI ĐẶT THƯ VIỆN PYTHON ---
+      - name: Install Python Dependencies
         run: |
-          # Chỉ cài đặt, không cần upgrade pip nếu không cần thiết
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Chạy script
-      - name: Run
+      # --- BƯỚC 5: CHẠY SCRIPT CHÍNH (SẢN XUẤT VIDEO) ---
+      - name: Run Production Script
         env:
+          # Các khóa bảo mật lấy từ Settings > Secrets > Actions của GitHub
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}  # ✅ thêm dòng này
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Thêm biến ngày giờ để Python có thể sử dụng nếu cần
+          CURRENT_DATE: $(date +'%Y-%m-%d %H:%M:%S')
         run: python run.py
 
-      # 5. Upload video (Nén nhanh)
-      - name: Upload video artifact
+      # --- BƯỚC 6: LƯU TRỮ KẾT QUẢ (ARTIFACTS) ---
+      - name: Upload Video Result
         uses: actions/upload-artifact@v4
-        if: always() # Luôn chạy kể cả khi script lỗi để xem kết quả
+        if: always() # Luôn thực hiện bước này kể cả khi script Run bị lỗi để bạn có thể tải log/video lỗi về kiểm tra
         with:
-          name: video-output
-          path: output_*.mp4
-          retention-days: 1 # Chỉ giữ 1 ngày để tiết kiệm dung lượng lưu trữ
+          name: stock-video-${{ github.run_id }} # Tên file unique theo mỗi lần chạy
+          path: |
+            output_*.mp4
+            logs/*.txt
+          retention-days: 1 # Xóa sau 24h để tiết kiệm bộ nhớ cho kho lưu trữ GitHub
