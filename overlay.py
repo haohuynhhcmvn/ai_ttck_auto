@@ -48,10 +48,10 @@ def draw_overlay(data, size=(720, 1280)):
     img = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    f_header = load_font(35, bold=True)
-    f_section = load_font(28, bold=True)
-    f_ticker = load_font(20, bold=True)
-    f_small = load_font(14)
+    f_header = load_font(40, bold=True)
+    f_section = load_font(38, bold=True)
+    f_ticker = load_font(30, bold=True)
+    f_small = load_font(24)
 
     # --- HEADER BAR ---
     # Vẽ dải cam đặc trưng của Bloomberg
@@ -59,7 +59,7 @@ def draw_overlay(data, size=(720, 1280)):
     draw.text((30, 20), "BẢN TIN CHỨNG KHOÁN", font=f_header, fill="black")
     
     today = datetime.now().strftime("%H:%M | %d/%m/%Y")
-    draw.text((450, 32), today, font=f_small, fill="black")
+    draw.text((550, 32), today, font=f_small, fill="black")
 
     # --- CONTAINER BACKGROUND ---
     # Vẽ một hình chữ nhật bo góc mờ để chứa bảng giá
