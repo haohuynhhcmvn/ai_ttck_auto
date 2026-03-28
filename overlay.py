@@ -1,5 +1,5 @@
 # ==============================
-# BLOOMBERG STYLE OVERLAY (PRO)
+# BLOOMBERG STYLE OVERLAY (LEAN - NO INDEX)
 # ==============================
 
 from PIL import Image, ImageDraw, ImageFont
@@ -9,7 +9,7 @@ from datetime import datetime
 
 
 # ==============================
-# LOAD FONT SAFE (GH ACTIONS)
+# LOAD FONT SAFE
 # ==============================
 def load_font(size, bold=False):
     try:
@@ -36,7 +36,7 @@ def get_color(value):
 
 
 # ==============================
-# DRAW OVERLAY
+# DRAW OVERLAY (NO INDEX)
 # ==============================
 def draw_overlay(data, size=(720, 1280)):
     img = Image.new("RGBA", size, (0, 0, 0, 160))
@@ -58,99 +58,47 @@ def draw_overlay(data, size=(720, 1280)):
     y = 120
 
     # ==========================
-    # VNINDEX
-    # ==========================
-    vn = data.get("vnindex", {})
-    vn_close = vn.get("close", "N/A")
-    vn_change = vn.get("change", "N/A")
-
-    color = get_color(vn_change)
-
-    draw.text(
-        (20, y),
-        f"VN-Index: {vn_close}",
-        font=font_big,
-        fill="white"
-    )
-
-    draw.text(
-        (420, y),
-        f"{vn_change}",
-        font=font_big,
-        fill=color
-    )
-
-    y += 80
-
-    # ==========================
-    # VN30
-    # ==========================
-    vn30 = data.get("vn30", {})
-    vn30_change = vn30.get("change", "N/A")
-
-    draw.text((20, y), "VN30:", font=font, fill="white")
-
-    draw.text(
-        (120, y),
-        f"{vn30_change}",
-        font=font,
-        fill=get_color(vn30_change)
-    )
-
-    y += 60
-
-    # ==========================
     # TOP GAINERS
     # ==========================
     draw.text((20, y), "TOP GAINERS", font=font_big, fill=(0, 230, 118))
-    y += 40
+    y += 50
 
     for s, v in data.get("gainers", [])[:8]:
-        draw.text(
-            (20, y),
-            f"{s}",
-            font=font,
-            fill="white"
-        )
+        draw.text((20, y), f"{s}", font=font, fill="white")
 
         draw.text(
             (250, y),
             f"+{v}%",
             font=font,
-            fill=(0, 230, 118)
+            fill=get_color(v)
         )
 
-        y += 30
+        y += 32
 
     # ==========================
     # TOP LOSERS
     # ==========================
-    y += 20
+    y += 30
     draw.text((20, y), "TOP LOSERS", font=font_big, fill=(255, 82, 82))
-    y += 40
+    y += 50
 
     for s, v in data.get("losers", [])[:8]:
-        draw.text(
-            (20, y),
-            f"{s}",
-            font=font,
-            fill="white"
-        )
+        draw.text((20, y), f"{s}", font=font, fill="white")
 
         draw.text(
             (250, y),
             f"{v}%",
             font=font,
-            fill=(255, 82, 82)
+            fill=get_color(v)
         )
 
-        y += 30
+        y += 32
 
     return np.array(img)
 
 
 # ==============================
-# CREATE OVERLAY (NHẸ + NHANH)
+# CREATE OVERLAY
 # ==============================
 def create_overlay(data, duration):
     img = draw_overlay(data)
