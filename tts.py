@@ -147,13 +147,3 @@ def text_to_speech(text, voice=None):
     loop.run_until_complete(tts_async(text, filename, voice))
 
     return filename
-
-
-# ==============================
-# TEST
-# ==============================
-
-if __name__ == "__main__":
-    sample = "NVL tăng 2.35% lên 12,500 đồng. VN-Index đạt 1234.56 điểm"
-    file = text_to_speech(sample)
-    print("Generated:", file)
