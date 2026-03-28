@@ -81,7 +81,7 @@ def script_to_content(script, topic=None):
     """
     
     prompt = f"""
-# NHIỆM VỤ: Chuyển đổi kịch bản video (dùng để đọc) thành bài đăng mạng xã hội (TikTok/Facebook/Telegram).
+# NHIỆM VỤ: Chuyển đổi kịch bản video (dùng để đọc) thành bài đăng mạng xã hội (TikTok/Facebook/Telegram) chỉ rút gọn lại tối đa 200 từ.
 # CHỦ ĐỀ: {topic if topic else "Bản tin tài chính"}
 # KỊCH BẢN GỐC: {script}
 
