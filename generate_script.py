@@ -76,7 +76,7 @@ def call_qwen(prompt, retry=3): # Tăng lên 3 lần thử cho chắc chắn
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-10 từ. Kết thúc bằng dấu chấm."},
+            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-15 từ. Kết thúc bằng dấu chấm."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.6,
@@ -159,7 +159,7 @@ PHẦN 2: BỐI CẢNH VNINDEX & VĨ MÔ (Viết dài, chiếm 40% dung lượng
 - Liên kết chặt chẽ giữa chỉ số DXY, lợi suất trái phiếu Mỹ với tỷ giá trong nước.
 - Phân tích tâm lý đám đông trước các tin tức kinh tế, lãi suất chính trị, lạm phát hoặc chiến tranh phạm vi toàn cầu và trong nước (dẫn chiếu 3 đến 5 tin tức nổi bật, nóng hổi).
 - Diễn giải tác động của dòng vốn ngoại đối với tâm lý khối nội. 
-- *Lưu ý: Chia nhỏ các phân tích phức tạp thành nhiều câu đơn 7 từ.*
+- *Lưu ý: Chia nhỏ các phân tích phức tạp thành nhiều câu đơn 7-15 từ.*
 
 PHẦN 3: DÒNG TIỀN & NGÀNH (3-4 câu)
 - Chỉ tên 2-3 ngành đang là "vịnh tránh bão" hoặc "đầu tàu".
