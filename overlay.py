@@ -113,7 +113,7 @@ def draw_overlay(data, size=(720, 1280)):
     # --- FOOTER ---
     # Ghi chú dữ liệu theo giờ Việt Nam
     draw.rectangle((0, 1200, 720, 1280), fill=(20, 20, 20, 200))
-    footer_text = f"Dữ liệu cập nhật lúc {now_vn.strftime('%H:%M')} theo giờ Hà Nội"
+    footer_text = f"Product by: Tâm sự 24h - Tin tức - Tài chính - Công nghệ"
     draw.text((30, 1225), footer_text, font=f_small, fill=(150, 150, 150))
 
     return np.array(img)
