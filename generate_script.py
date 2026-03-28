@@ -136,7 +136,7 @@ CẤU TRÚC SCRIPT:
 - KỸ THUẬT: Tín hiệu bùng nổ hoặc đảo chiều.
 - CHIẾN LƯỢC: Lời khuyên nắm giữ hoặc quan sát.
 
-Hãy viết theo phong cách MC tài chính bản tin 60 giây.
+Hãy viết khoảng 200-250 từ theo phong cách MC tài chính cho bản tin dài khoảng 90 giây.
 """
 
     print("🤖 Đang khởi tạo AI viết kịch bản...")
