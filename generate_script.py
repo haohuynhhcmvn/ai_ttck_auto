@@ -17,8 +17,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 # Model names
-QWEN_MODEL = "qwen/qwen2.5-72b-instruct" # NVIDIA NIM thường dùng bản này ổn định
-GEMINI_MODEL = "gemini-1.5-flash"
+QWEN_MODEL = "qwen/"qwen/qwen3.5-122b-a10b"" # NVIDIA NIM thường dùng bản này ổn định
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # ==============================
 # NUMBER NORMALIZATION (FIXED)
