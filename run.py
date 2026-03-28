@@ -2,113 +2,95 @@
 # MAIN PIPELINE (FINAL PRO MAX)
 # ==============================
 
-# Import modules
-from topic_ai import generate_topics
+import os
+from market_data import get_market_data
 from generate_script import generate_script
-from content_ai import script_to_content
+from text_utils import save_text, clean_text_for_tts
 from tts import text_to_speech
+from content_ai import script_to_content
 from transcribe import transcribe
 from subtitle import create_subtitles
 from render import render_video
 from upload_youtube import upload_video
 from telegram import send_message, send_video
-from market_data import get_market_data
-from text_utils import save_text, clean_text_for_tts
-
+from topic_ai import generate_topics
 
 # ==============================
 # PROCESS 1 VIDEO
 # ==============================
 def process_video(topic, index):
-    print(f"\n🚀 Processing video {index}: {topic}")
+    print(f"\n🚀 Đang xử lý Video {index + 1}: {topic}")
 
-    # ==========================
-    # 1. GENERATE SCRIPT
-    # ==========================
-    print("1️⃣ Generate script")
-    script = generate_script(topic)
-
-    if not script or len(script) < 20:
-        print("❌ Script lỗi → skip")
-        return
-
-    # 💾 lưu raw
-    save_text(script, "raw")
-
-    # ==========================
-    # 2. CLEAN TEXT FOR TTS
-    # ==========================
-    print("2️⃣ Clean text for TTS")
-    clean_script = clean_text_for_tts(script)
-
-    # 💾 lưu clean
-    save_text(clean_script, "clean")
-
-    # ==========================
-    # 3. SOCIAL CONTENT
-    # ==========================
-    print("3️⃣ Generate social content")
-    content = script_to_content(script, topic)
-
-    # ==========================
-    # 4. MARKET DATA
-    # ==========================
-    print("4️⃣ Fetch market data")
+    # 1. LẤY DỮ LIỆU THỊ TRƯỜNG (PHẢI CÓ TRƯỚC)
+    print("1️⃣ Đang lấy dữ liệu thị trường thực tế...")
     try:
+        # market_data nên trả về dict: {'gain_text': '...', 'lose_text': '...', 'index_status': '...'}
         market_data = get_market_data()
     except Exception as e:
-        print("⚠️ Market data error:", e)
-        market_data = {}
+        print(f"⚠️ Lỗi lấy data: {e}")
+        market_data = {"gain_text": "Đang cập nhật", "lose_text": "Đang cập nhật"}
 
-    # ==========================
-    # 5. TEXT TO SPEECH
-    # ==========================
-    print("5️⃣ Generate audio")
-    try:
-        audio = text_to_speech(clean_script)  # 🔥 FIX QUAN TRỌNG
-    except Exception as e:
-        print("❌ TTS lỗi:", e)
+    # 2. GENERATE SCRIPT (DỰA TRÊN DATA THẬT)
+    print("2️⃣ AI đang viết Script dựa trên dữ liệu phiên hôm nay...")
+    script = generate_script(topic, market_data)
+
+    if not script or len(script) < 50:
+        print("❌ Script quá ngắn hoặc lỗi -> Bỏ qua video này.")
         return
 
-    # ==========================
-    # 6. TRANSCRIBE
-    # ==========================
-    print("6️⃣ Transcribe words")
+    save_text(script, f"raw_{index}")
+
+    # 3. LÀM SẠCH TEXT CHO GIỌNG ĐỌC
+    print("3️⃣ Chuẩn hóa văn bản cho TTS...")
+    clean_script = clean_text_for_tts(script)
+    save_text(clean_script, f"clean_{index}")
+
+    # 4. TẠO CONTENT SOCIAL (CAPTION TIKTOK/YOUTUBE)
+    print("4️⃣ Tạo nội dung Social...")
+    social_content = script_to_content(script, topic)
+
+    # 5. TEXT TO SPEECH (AUDIO)
+    print("5️⃣ Đang chuyển đổi văn bản thành giọng nói...")
     try:
-        words = transcribe(audio)
+        audio_file = text_to_speech(clean_script)
     except Exception as e:
-        print("⚠️ Transcribe lỗi:", e)
+        print(f"❌ Lỗi TTS: {e}")
+        return
+
+    # 6. TRANSCRIBE (LẤY TIMESTAMP TỪNG TỪ)
+    print("6️⃣ Đang tách chữ từ âm thanh (Transcribe)...")
+    try:
+        words = transcribe(audio_file)
+    except Exception as e:
+        print(f"⚠️ Lỗi Transcribe: {e}")
         words = []
 
-    # ==========================
-    # 7. SUBTITLE (ASS)
-    # ==========================
-    print("7️⃣ Create subtitle")
-    try:
-        ass_file = create_subtitles(words)
-    except Exception as e:
-        print("⚠️ Subtitle lỗi:", e)
-        ass_file = None
+    # 7. TẠO SUBTITLE (FILE .ASS)
+    print("7️⃣ Đang tạo file phụ kiện Subtitle...")
+    ass_file = None
+    if words:
+        try:
+            ass_file = create_subtitles(words)
+        except Exception as e:
+            print(f"⚠️ Lỗi tạo Sub: {e}")
 
-    # ==========================
-    # 8. RENDER VIDEO
-    # ==========================
-    print("8️⃣ Render video")
-    output = f"output_{index}.mp4"
-
+    # 8. RENDER VIDEO (KẾT HỢP TẤT CẢ)
+    print("8️⃣ Đang Render Video hoàn chỉnh...")
+    output_filename = f"final_video_{index}.mp4"
     try:
         render_video(
-            audio,
-            ass_file,
-            output,
-            topic,
-            market_data,
-            script
+            audio=audio_file,
+            subtitle=ass_file,
+            output=output_filename,
+            topic=topic,
+            market_data=market_data,
+            script=script
         )
     except Exception as e:
-        print("❌ Render lỗi:", e)
+        print(f"❌ Lỗi Render: {e}")
         return
 
+    # 9. UPLOAD & NOTIFY (BƯỚC CUỐI)
     # ==========================
     # 9. UPLOAD YOUTUBE
     # ==========================
