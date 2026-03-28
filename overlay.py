@@ -55,11 +55,11 @@ def draw_overlay(data, size=(720, 1280)):
 
     # --- HEADER BAR ---
     # Vẽ dải cam đặc trưng của Bloomberg
-    draw.rectangle((0, 0, 720, 90), fill=C_ACCENT)
+    draw.rectangle((0, 0, 720, 100), fill=C_ACCENT)
     draw.text((30, 20), "BẢN TIN CHỨNG KHOÁN", font=f_header, fill="black")
     
     today = datetime.now().strftime("%H:%M | %d/%m/%Y")
-    draw.text((450, 45), today, font=f_small, fill="black")
+    draw.text((450, 75), today, font=f_small, fill="black")
 
     # --- CONTAINER BACKGROUND ---
     # Vẽ một hình chữ nhật bo góc mờ để chứa bảng giá
