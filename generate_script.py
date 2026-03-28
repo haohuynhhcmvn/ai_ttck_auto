@@ -67,26 +67,45 @@ def optimize_for_tts(text):
 # ==============================
 # LLM CALLS (QWEN & GEMINI)
 # ==============================
-def call_qwen(prompt, retry=2):
+def call_qwen(prompt, retry=3): # Tăng lên 3 lần thử cho chắc chắn
     url = "https://integrate.api.nvidia.com/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {NVIDIA_API_KEY}", 
+        "Content-Type": "application/json"
+    }
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-10 từ. Kết thúc bằng dấu chấm. Không dùng ký tự lạ."},
+            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-10 từ. Kết thúc bằng dấu chấm."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.6,
-        "max_tokens": 600
+        "max_tokens": 800 # Tăng nhẹ để tránh bị cắt cụt kịch bản
     }
+
     for i in range(retry):
         try:
-            res = requests.post(url, headers=headers, json=payload, timeout=25)
+            print(f"📡 Đang gọi Qwen (Lần thử {i+1})...")
+            # Tăng timeout lên 60 giây vì Model 122B phản hồi rất chậm
+            res = requests.post(url, headers=headers, json=payload, timeout=60)
+            
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"]
+            
+            elif res.status_code == 429:
+                print("⏳ Chạm giới hạn (Rate Limit). Chờ 10s...")
+                time.sleep(10)
+            else:
+                print(f"⚠️ Qwen trả lỗi HTTP {res.status_code}: {res.text}")
+                
+        except requests.exceptions.Timeout:
+            print(f"🕒 Lần {i+1}: Quá thời gian phản hồi (Timeout).")
         except Exception as e:
-            print(f"⚠️ Qwen lỗi: {e}")
-            time.sleep(2)
+            print(f"❌ Lần {i+1} lỗi hệ thống: {e}")
+        
+        # Chờ lâu hơn sau mỗi lần thất bại (2s, 4s, 8s)
+        time.sleep(2 ** (i + 1))
+        
     return None
 
 def call_gemini(prompt, retry=2):
