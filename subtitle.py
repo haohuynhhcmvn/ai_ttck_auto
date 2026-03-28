@@ -1,13 +1,8 @@
 # ==============================
-# CREATE SUBTITLES (CENTER FIX)
+# SUBTITLE (ASS PRO MAX)
 # ==============================
 
-from moviepy.editor import TextClip, CompositeVideoClip
 import unicodedata
-
-FONT_PATH = "assets/fonts/NotoSans-Regular.ttf"
-FONT_SIZE = 80
-MAX_WORDS = 6
 
 
 def normalize_text(text):
@@ -17,14 +12,21 @@ def normalize_text(text):
     return text.strip()
 
 
-def group_words(words):
+def format_time(t):
+    h = int(t // 3600)
+    m = int((t % 3600) // 60)
+    s = t % 60
+    return f"{h}:{m:02}:{s:05.2f}"
+
+
+def group_words(words, max_words=6):
     lines = []
     current = []
 
     for w in words:
         current.append(w)
 
-        if len(current) >= MAX_WORDS or w["word"].endswith((".", ",")):
+        if len(current) >= max_words or w["word"].endswith((".", ",")):
             lines.append(current)
             current = []
 
@@ -34,59 +36,46 @@ def group_words(words):
     return lines
 
 
-def create_subtitles(words):
-    clips = []
-    lines = group_words(words)
+# ==============================
+# MAIN EXPORT ASS
+# ==============================
 
-    for line in lines:
-        try:
-            full_text = normalize_text(" ".join([w["word"] for w in line]))
+def create_subtitles(words, filename="sub.ass"):
+    header = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
 
-            start = line[0]["start"]
-            end = line[-1]["end"]
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV
+Style: Default,Noto Sans,70,&H00FFFFFF,&H0000FFFF,&H00000000,1,3,0,5,10,10,300
 
-            # 🔥 BASE TEXT (CENTER CHUẨN)
-            base_clip = TextClip(
-                full_text,
-                fontsize=FONT_SIZE,
-                color="white",
-                stroke_color="black",
-                stroke_width=3,
-                font=FONT_PATH,
-                method="caption",
-                size=(900, None),        # 🔥 rộng hơn để không xuống dòng xấu
-                align="center"           # 🔥 canh chữ giữa
-            ).set_start(start).set_duration(end - start).set_position(
-                ("center", 0.6), relative=True   # 🔥 FIX CHUẨN CENTER (TikTok style)
-            )
+[Events]
+Format: Start, End, Style, Text
+"""
 
-            sub_clips = [base_clip]
+    lines = [header]
 
-            # 🔥 HIGHLIGHT
-            for w in line:
-                word = normalize_text(w["word"])
+    groups = group_words(words)
 
-                highlight = TextClip(
-                    word,
-                    fontsize=FONT_SIZE,
-                    color="yellow",
-                    stroke_color="black",
-                    stroke_width=3,
-                    font=FONT_PATH,
-                    method="caption"
-                ).set_start(w["start"]).set_duration(
-                    w["end"] - w["start"]
-                ).set_position(
-                    ("center", 0.6), relative=True   # 🔥 đồng bộ vị trí
-                )
+    for group in groups:
+        start = format_time(group[0]["start"])
+        end = format_time(group[-1]["end"])
 
-                sub_clips.append(highlight)
+        text = ""
 
-            final_clip = CompositeVideoClip(sub_clips)
+        for w in group:
+            word = normalize_text(w["word"])
 
-            clips.append(final_clip)
+            # 🔥 thời gian highlight (centiseconds)
+            duration = int((w["end"] - w["start"]) * 100)
 
-        except Exception as e:
-            print("⚠️ subtitle lỗi:", e)
+            text += f"{{\\k{duration}}}{word} "
 
-    return clips
+        line = f"Dialogue: {start},{end},Default,{text.strip()}"
+        lines.append(line)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    return filename
