@@ -1,5 +1,5 @@
 # ==============================
-# GENERATE SCRIPT (FINAL PRO - QWEN PRIORITY)
+# GENERATE SCRIPT (NO INDEX - QWEN PRIORITY)
 # ==============================
 
 import requests
@@ -20,7 +20,6 @@ NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 # ==============================
 
 def optimize_for_tts(text):
-    text = text.replace("VNINDEX", "VN-Index")
     text = text.replace(",", "...")
     text = text.replace(".", "...")
     return text
@@ -51,7 +50,7 @@ def call_qwen(prompt, retry=3):
             }
         ],
         "temperature": 0.7,
-        "max_tokens": 600
+        "max_tokens": 400
     }
 
     for i in range(retry):
@@ -109,86 +108,55 @@ def generate_script(topic):
     # 🔥 DATA THẬT
     data = get_market_data()
 
-    vn = data.get("vnindex", {})
-    vn30 = data.get("vn30", {})
     gainers = data.get("gainers", [])[:3]
     losers = data.get("losers", [])[:3]
 
-    # ==============================
-    # BUILD DATA TEXT
-    # ==============================
-
-    if vn.get("close") != "N/A":
-        vn_text = f"""
-VN-Index: {vn.get('close')} điểm...
-Biến động: {vn.get('change')} điểm...
-"""
-    else:
-        vn_text = "Chưa có dữ liệu VN-Index..."
-
-    if vn30.get("close") != "N/A":
-        vn30_text = f"VN30: {vn30.get('close')} điểm..."
-    else:
-        vn30_text = ""
-
-    gain_text = ", ".join([f"{s} {v}%" for s, v in gainers]) if gainers else ""
-    lose_text = ", ".join([f"{s} {v}%" for s, v in losers]) if losers else ""
+    gain_text = ", ".join([f"{s} {v}%" for s, v in gainers]) if gainers else "Không có dữ liệu"
+    lose_text = ", ".join([f"{s} {v}%" for s, v in losers]) if losers else "Không có dữ liệu"
 
     # ==============================
-    # PROMPT
+    # PROMPT (CLEAN - KHÔNG INDEX)
     # ==============================
 
     prompt = f"""
-Bạn là MC bản tin tài chính trên TikTok.
-
-NHIỆM VỤ:
-Viết kịch bản video ngắn cực cuốn hút, giữ người xem đến cuối.
+Bạn là MC bản tin tài chính TikTok.
 
 DỮ LIỆU THỊ TRƯỜNG:
-{vn_text}
-{vn30_text}
 
 Top tăng: {gain_text}
 Top giảm: {lose_text}
 
-YÊU CẦU BẮT BUỘC:
+YÊU CẦU:
 
-1. Hook cực mạnh trong câu đầu tiên
-2. Tạo cảm giác:
-   - Sắp mất tiền
-   - Hoặc sắp có cơ hội lớn
-3. Câu rất ngắn (5–10 từ)
-4. Mỗi câu xuống dòng bằng dấu ba chấm ...
-5. Không dùng ký hiệu đặc biệt
-6. Không hashtag
-7. Không giải thích dài dòng
-8. Không bịa số liệu
+- Hook cực mạnh ngay câu đầu
+- Gây cảm giác:
+  + Sắp mất tiền
+  + Hoặc cơ hội lớn
+- Câu rất ngắn (5–10 từ)
+- Mỗi câu ngắt bằng dấu ...
+- Không ký hiệu đặc biệt
+- Không hashtag
+- Không bịa số liệu
 
-QUY TẮC TTS (RẤT QUAN TRỌNG):
+QUY TẮC TTS:
 
-- Viết để AI đọc mượt, không bị vấp
-- Tránh dấu câu phức tạp
-- Có nhịp nghỉ tự nhiên
-- Không viết câu quá dài
-- Số viết dạng dễ đọc:
-  ví dụ 1.5 → một phẩy năm
+- Viết để đọc mượt
+- Nhịp rõ ràng
+- Không câu dài
+- Số dễ đọc
 
 ĐỘ DÀI:
-50 đến 60 chữ
+50–60 chữ
 
-FORMAT OUTPUT:
-
-- Chỉ trả về nội dung kịch bản
-- Không tiêu đề
-- Không giải thích
-- Mỗi câu cách nhau bằng ...
+OUTPUT:
+Chỉ nội dung script
 
 CHỦ ĐỀ:
 {topic}
 """
 
     # ==============================
-    # 1. ƯU TIÊN QWEN
+    # 1. QWEN
     # ==============================
 
     script = call_qwen(prompt)
@@ -198,7 +166,7 @@ CHỦ ĐỀ:
         return optimize_for_tts(script.strip())
 
     # ==============================
-    # 2. FALLBACK GEMINI
+    # 2. GEMINI FALLBACK
     # ==============================
 
     payload = {
@@ -212,35 +180,35 @@ CHỦ ĐỀ:
         return optimize_for_tts(script.strip())
 
     # ==============================
-    # 3. FALLBACK CỨNG
+    # 3. FALLBACK HARD
     # ==============================
 
-    return fallback_script(topic, vn_text)
+    return fallback_script(topic, gain_text, lose_text)
 
 
 # ==============================
-# FALLBACK (NO AI)
+# FALLBACK
 # ==============================
 
-def fallback_script(topic, vn_text):
+def fallback_script(topic, gain_text, lose_text):
     print("⚠️ Dùng fallback script")
 
     return f"""
-90% nhà đầu tư đang hiểu sai thị trường...
+Dòng tiền đang xoay chiều...
 
-{vn_text}
+Top tăng nổi bật là {gain_text}...
 
-Dòng tiền đang dịch chuyển âm thầm...
+Nhưng phía giảm đang rất nguy hiểm...
 
-Top cổ phiếu bắt đầu phân hóa mạnh...
+{lose_text} đang kéo thị trường xuống...
 
-Nếu bạn vào sai nhịp...
+Nhiều người đang mắc sai lầm...
 
-Tài khoản sẽ bốc hơi rất nhanh...
+Vào lệnh sai thời điểm...
 
-Nhưng nếu hiểu đúng dòng tiền...
+Tài khoản có thể bốc hơi nhanh...
 
-Cơ hội vẫn còn phía trước...
+Nhưng cơ hội vẫn còn...
 
-Ai hiểu sẽ hành động sớm...
+Ai nhanh sẽ đi trước...
 """
