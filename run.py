@@ -82,21 +82,25 @@ def process_video(topic, index):
         print(f"⚠️ Lỗi tạo Subtitle: {e}")
         ass_file = None
 
-    # --- BƯỚC 8: RENDER VIDEO ---
-    print("8️⃣ Đang Render Video (FFmpeg/MoviePy)...")
-    output = f"final_output_{index}.mp4"
-
+    # ==========================
+    # 8. RENDER VIDEO
+    # ==========================
+    print("8️⃣ Render video")
+    output = f"output_{index}.mp4"
+    
     try:
+        # BỎ keyword 'audio=', 'subtitle=' nếu tên biến trong render.py khác
+        # Hoặc truyền đúng tên biến đã định nghĩa:
         render_video(
-            audio=audio,
-            subtitle=ass_file,
+            audio_path=audio,    # Sửa từ 'audio' thành 'audio_path'
+            subtitles=ass_file,  # Sửa từ 'subtitle' thành 'subtitles'
             output=output,
             topic=topic,
             market_data=market_data,
             script=script
         )
     except Exception as e:
-        print(f"❌ Lỗi Render: {e}")
+        print("❌ Render lỗi:", e)
         return
 
     # --- BƯỚC 9: UPLOAD YOUTUBE ---
