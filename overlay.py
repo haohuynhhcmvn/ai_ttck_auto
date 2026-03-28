@@ -63,7 +63,7 @@ def draw_overlay(data, size=(720, 1280)):
     draw.text((20, y), "TOP GAINERS", font=font_big, fill=(0, 230, 118))
     y += 50
 
-    for s, v in data.get("gainers", [])[:8]:
+    for s, v in data.get("gainers", [])[:10]:
         draw.text((20, y), f"{s}", font=font, fill="white")
 
         draw.text(
@@ -82,7 +82,7 @@ def draw_overlay(data, size=(720, 1280)):
     draw.text((20, y), "TOP LOSERS", font=font_big, fill=(255, 82, 82))
     y += 50
 
-    for s, v in data.get("losers", [])[:8]:
+    for s, v in data.get("losers", [])[:10]:
         draw.text((20, y), f"{s}", font=font, fill="white")
 
         draw.text(
