@@ -139,30 +139,52 @@ Biến động: {vn.get('change')} điểm...
     # ==============================
 
     prompt = f"""
-Bạn là chuyên gia tạo video tài chính viral.
+Bạn là MC bản tin tài chính trên TikTok.
 
-DỮ LIỆU:
+NHIỆM VỤ:
+Viết kịch bản video ngắn cực cuốn hút, giữ người xem đến cuối.
+
+DỮ LIỆU THỊ TRƯỜNG:
 {vn_text}
 {vn30_text}
 
 Top tăng: {gain_text}
 Top giảm: {lose_text}
 
-YÊU CẦU:
+YÊU CẦU BẮT BUỘC:
 
-- Hook cực mạnh 3 giây đầu
-- Gây FOMO + sợ mất tiền
-- Câu ngắn 5–10 từ
-- Không bịa data
-- Đọc mượt cho TTS
+1. Hook cực mạnh trong câu đầu tiên
+2. Tạo cảm giác:
+   - Sắp mất tiền
+   - Hoặc sắp có cơ hội lớn
+3. Câu rất ngắn (5–10 từ)
+4. Mỗi câu xuống dòng bằng dấu ba chấm ...
+5. Không dùng ký hiệu đặc biệt
+6. Không hashtag
+7. Không giải thích dài dòng
+8. Không bịa số liệu
 
-ĐỘ DÀI: 200–250 chữ
+QUY TẮC TTS (RẤT QUAN TRỌNG):
 
-FORMAT:
-- Không ký hiệu
-- Không hashtag
+- Viết để AI đọc mượt, không bị vấp
+- Tránh dấu câu phức tạp
+- Có nhịp nghỉ tự nhiên
+- Không viết câu quá dài
+- Số viết dạng dễ đọc:
+  ví dụ 1.5 → một phẩy năm
 
-Chủ đề: {topic}
+ĐỘ DÀI:
+200 đến 250 chữ
+
+FORMAT OUTPUT:
+
+- Chỉ trả về nội dung kịch bản
+- Không tiêu đề
+- Không giải thích
+- Mỗi câu cách nhau bằng ...
+
+CHỦ ĐỀ:
+{topic}
 """
 
     # ==============================
