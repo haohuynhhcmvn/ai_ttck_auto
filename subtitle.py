@@ -65,7 +65,7 @@ PlayResY: 1280
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,30,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,5,10,10,450,1
+Style: Default,Arial,25,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,5,10,10,450,1
 """
     # PrimaryColour: &H00FFFFFF (Trắng) - Màu chữ lúc chưa đọc đến
     # SecondaryColour: &H0000FFFF (Vàng) - Màu chữ khi đang đọc đến (Karaoke)
