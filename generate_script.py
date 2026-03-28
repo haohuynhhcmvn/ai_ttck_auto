@@ -137,7 +137,7 @@ def generate_script(topic, market_data=None):
 
     prompt = f"""
 # ROLE: Bạn là Chuyên gia phân tích chiến lược tại một quỹ đầu tư lớn. 
-# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 180 giây (450-5000 từ) sao cho phù hợp với tốc độ đọc 1.1x.
+# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 180 giây (450-500 từ) sao cho phù hợp với tốc độ đọc 1.1x.
 
 # THÔNG SỐ KỸ THUẬT (CỰC KỲ NGHIÊM NGẶT):
 1. Độ dài câu: Bắt buộc từ 5 đến 15 từ. Không được ngắn hơn, không được dài hơn.
@@ -176,7 +176,7 @@ PHẦN 5: CHIẾN LƯỢC & QUẢN TRỊ (Phần kết, viết sâu)
 # YÊU CẦU VỀ NGÔN NGỮ:
 Sử dụng thuật ngữ tài chính chuyên nghiệp như: Lực cầu chủ động, Áp lực chốt lời, Phân kỳ dương, Cản tâm lý, Tích lũy nền chặt.
 
-Hãy bắt đầu viết. Đảm bảo độ dài để MC đọc trong 90 giây.
+Hãy bắt đầu viết. Đảm bảo độ dài để MC đọc trong 180 giây.
 """
 
     print("🤖 Đang khởi tạo AI viết kịch bản...")
