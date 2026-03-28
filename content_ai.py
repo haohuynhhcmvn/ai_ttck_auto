@@ -1,15 +1,17 @@
 # ==============================
-# SCRIPT → SOCIAL CONTENT (PRO)
+# SCRIPT → SOCIAL CONTENT (PRO MAX VIRAL)
 # ==============================
 
+import random
+
+
 def script_to_content(script, topic=None):
-    # 🔥 tách câu
     lines = script.split("...")
 
     content = []
 
     # ==============================
-    # HEADER
+    # HEADER (HOOK)
     # ==============================
     if topic:
         content.append(f"🚨 {topic.upper()}")
@@ -17,41 +19,59 @@ def script_to_content(script, topic=None):
     content.append("📊 BẢN TIN CHỨNG KHOÁN HÔM NAY\n")
 
     # ==============================
-    # BODY
+    # CLEAN LINES
     # ==============================
     clean_lines = []
 
     for line in lines:
         line = line.strip()
 
-        # bỏ line rác
         if not line or len(line) < 5:
             continue
 
-        # fix spacing
         line = line.replace("  ", " ")
 
         clean_lines.append(line)
 
+    # ==============================
+    # BODY (TĂNG NHỊP)
+    # ==============================
     for i, line in enumerate(clean_lines):
+
         if i == 0:
-            content.append(f"🔥 {line}")  # hook mạnh
-        elif i < 3:
-            content.append(f"⚡ {line}")  # đoạn giữ người xem
+            # 🔥 hook mạnh hơn
+            content.append(f"🔥 {line.upper()}")
+
+        elif i == 1:
+            content.append(f"⚠️ {line}")
+
+        elif i == 2:
+            content.append(f"🚀 {line}")
+
+        elif i < 5:
+            content.append(f"⚡ {line}")
+
         else:
             content.append(f"👉 {line}")
 
     # ==============================
-    # CTA
+    # CTA (STRONG)
     # ==============================
+    ctas = [
+        "📈 Follow ngay trước khi quá muộn",
+        "🚀 Đừng bỏ lỡ nhịp tăng tiếp theo",
+        "⚠️ Người biết sớm đang vào lệnh",
+        "🔥 Bạn đã sẵn sàng cho cơ hội này?"
+    ]
+
     content.append("\n⚠️ Cơ hội luôn đi kèm rủi ro")
-    content.append("📈 Follow ngay để không bỏ lỡ tín hiệu quan trọng")
+    content.append(random.choice(ctas))
 
     # ==============================
-    # HASHTAG (TỐI ƯU REACH)
+    # HASHTAG (ALGO TỐI ƯU)
     # ==============================
     content.append(
-        "\n#chungkhoan #vnindex #dautu #taichinh #stock #investing"
+        "\n#chungkhoan #stock #dautu #vnstock #fomo #investing #taichinh"
     )
 
     return "\n".join(content)
