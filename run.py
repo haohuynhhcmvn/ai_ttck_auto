@@ -55,12 +55,12 @@ def process_video(topic, index):
     print("5. Timestamp từng từ")
     words = transcribe(audio)
 
-    # ==========================
+    # ==============================
     # 6. SUBTITLE
-    # ==========================
+    # ==============================
     print("6. Tạo subtitle")
-    subs = create_subtitles(words)
-
+    ass_file = create_subtitles(words)
+    
     # ==========================
     # 7. RENDER VIDEO
     # ==========================
@@ -68,12 +68,12 @@ def process_video(topic, index):
     output = f"output_{index}.mp4"
 
     render_video(
-        audio,
-        subs,
-        output,
-        topic,
-        market_data,
-        script
+    audio,
+    ass_file,   # 🔥 đổi từ subs → ass_file
+    output,
+    topic,
+    market_data,
+    script
     )
 
     # ==========================
