@@ -1,62 +1,122 @@
 # ==============================
-# RENDER VIDEO PRO (TV STYLE)
+# RENDER VIDEO PRO (9:16 FINAL)
 # ==============================
 
+import subprocess
+import os
+import random
 from moviepy.editor import *
-import os, math, random
 from overlay import create_overlay
 
+
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
-    print("🎬 Render video...")
+    print("🎬 Render video 9:16 (FFmpeg PRO)...")
 
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
     # ==========================
+    # OVERLAY (MARKET DATA)
+    # ==========================
+    overlay_path = None
+
+    if market_data:
+        try:
+            overlay_clip = create_overlay(market_data, duration)
+
+            overlay_path = "overlay.mp4"
+            overlay_clip.write_videofile(
+                overlay_path,
+                fps=30,
+                codec="libx264",
+                audio=False
+            )
+
+            overlay_clip.close()
+
+        except Exception as e:
+            print("⚠️ overlay lỗi:", e)
+
+    # ==========================
     # BACKGROUND
     # ==========================
     if os.path.exists("background.mp4"):
-        bg = VideoFileClip("background.mp4")
+        start_time = random.uniform(0, 5)
 
-        if bg.duration < duration:
-            loop = math.ceil(duration / bg.duration)
-            bg = concatenate_videoclips([bg]*loop)
-
-        start = random.uniform(0, max(0, bg.duration - duration))
-        video = bg.subclip(start, start + duration)
+        bg_input = [
+            "-ss", str(start_time),
+            "-stream_loop", "-1",
+            "-i", "background.mp4"
+        ]
     else:
-        video = ColorClip((720,1280), color=(0,0,0), duration=duration)
-
-    # resize chuẩn dọc
-    video = video.resize(height=1280)
-    video = video.crop(x_center=video.w/2, width=720)
-
-    video = video.set_audio(audio)
+        bg_input = [
+            "-f", "lavfi",
+            "-i", "color=c=black:s=720x1280"   # 🔥 9:16 chuẩn
+        ]
 
     # ==========================
-    # OVERLAY DATA
+    # FILTER (QUAN TRỌNG)
     # ==========================
-    if market_data:
-        try:
-            overlay = create_overlay(market_data, duration)
-            clips = [video, overlay] + subtitles
-        except Exception as e:
-            print("⚠️ overlay lỗi:", e)
-            clips = [video] + subtitles
-    else:
-        clips = [video] + subtitles
+    filters = []
 
-    # ==========================
-    # FINAL
-    # ==========================
-    final = CompositeVideoClip(clips)
-
-    final.write_videofile(
-        output,
-        fps=30,
-        codec="libx264",
-        audio_codec="aac"
+    # 🔥 SCALE + CROP CHUẨN 9:16 (KHÔNG MÉO)
+    filters.append(
+        "[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280[bg]"
     )
 
-    print("✅ Done:", output)
+    # ==========================
+    # OVERLAY
+    # ==========================
+    if overlay_path:
+        filters.append("[bg][1:v]overlay=0:0[tmp1]")
+        last_video = "[tmp1]"
+        audio_index = 2
+    else:
+        last_video = "[bg]"
+        audio_index = 1
+
+    # ==========================
+    # SUBTITLE ASS
+    # ==========================
+    if subtitles and subtitles.endswith(".ass"):
+        filters.append(f"{last_video}ass={subtitles}[v]")
+    else:
+        filters.append(f"{last_video}[v]")
+
+    filter_complex = ";".join(filters)
+
+    # ==========================
+    # BUILD CMD
+    # ==========================
+    cmd = [
+        "ffmpeg",
+        "-y",
+        *bg_input,
+    ]
+
+    if overlay_path:
+        cmd += ["-i", overlay_path]
+
+    cmd += [
+        "-i", audio_path,
+
+        "-filter_complex", filter_complex,
+
+        "-map", "[v]",
+        "-map", f"{audio_index}:a",
+
+        "-shortest",
+
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-crf", "23",
+
+        "-c:a", "aac",
+        "-b:a", "128k",
+
+        output
+    ]
+
+    subprocess.run(cmd, check=True)
+
     print("✅ Done video:", output)
