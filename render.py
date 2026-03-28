@@ -1,5 +1,5 @@
 # ==============================
-# RENDER VIDEO PRO (9:16 FINAL)
+# RENDER VIDEO PRO MAX (FIXED)
 # ==============================
 
 import subprocess
@@ -10,13 +10,13 @@ from overlay import create_overlay
 
 
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
-    print("🎬 Render video 9:16 (FFmpeg PRO)...")
+    print("🎬 Render video 9:16 (FFmpeg PRO MAX)...")
 
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
     # ==========================
-    # OVERLAY (MARKET DATA)
+    # OVERLAY
     # ==========================
     overlay_path = None
 
@@ -29,7 +29,8 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
                 overlay_path,
                 fps=30,
                 codec="libx264",
-                audio=False
+                audio=False,
+                preset="ultrafast"   # 🔥 tăng tốc
             )
 
             overlay_clip.close()
@@ -51,22 +52,19 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
     else:
         bg_input = [
             "-f", "lavfi",
-            "-i", "color=c=black:s=720x1280"   # 🔥 9:16 chuẩn
+            "-i", "color=c=black:s=720x1280:r=24"
         ]
 
     # ==========================
-    # FILTER (QUAN TRỌNG)
+    # FILTER
     # ==========================
     filters = []
 
-    # 🔥 SCALE + CROP CHUẨN 9:16 (KHÔNG MÉO)
     filters.append(
-        "[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280[bg]"
+        "[0:v]fps=24,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280[bg]"
     )
 
-    # ==========================
-    # OVERLAY
-    # ==========================
+    # overlay
     if overlay_path:
         filters.append("[bg][1:v]overlay=0:0[tmp1]")
         last_video = "[tmp1]"
@@ -75,13 +73,12 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         last_video = "[bg]"
         audio_index = 1
 
-    # ==========================
-    # SUBTITLE ASS
-    # ==========================
+    # subtitle
     if subtitles and subtitles.endswith(".ass"):
-        filters.append(f"{last_video}ass={subtitles}[v]")
+        safe_sub = subtitles.replace("\\", "/")
+        filters.append(f"{last_video}ass={safe_sub}[v]")
     else:
-        filters.append(f"{last_video}[v]")
+        filters.append(f"{last_video}null[v]")
 
     filter_complex = ";".join(filters)
 
@@ -105,17 +102,23 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         "-map", "[v]",
         "-map", f"{audio_index}:a",
 
+        "-t", str(duration),   # 🔥 FIX QUAN TRỌNG
         "-shortest",
 
+        "-r", "24",
+
         "-c:v", "libx264",
-        "-preset", "veryfast",
+        "-preset", "ultrafast",   # 🔥 nhanh hơn
         "-crf", "23",
+        "-pix_fmt", "yuv420p",
 
         "-c:a", "aac",
         "-b:a", "128k",
 
         output
     ]
+
+    print("⚙️ FFmpeg CMD:", " ".join(cmd))
 
     subprocess.run(cmd, check=True)
 
