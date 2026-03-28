@@ -59,7 +59,7 @@ def draw_overlay(data, size=(720, 1280)):
     draw.text((30, 20), "BẢN TIN CHỨNG KHOÁN", font=f_header, fill="black")
     
     today = datetime.now().strftime("%H:%M | %d/%m/%Y")
-    draw.text((450, 120), today, font=f_small, fill="black")
+    draw.text((450, 45), today, font=f_small, fill="black")
 
     # --- CONTAINER BACKGROUND ---
     # Vẽ một hình chữ nhật bo góc mờ để chứa bảng giá
