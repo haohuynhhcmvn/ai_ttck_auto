@@ -7,15 +7,39 @@ import pandas as pd
 import time
 
 # ==============================
-# VN30 LIST
+# VNINDEX_ALL LIST
 # ==============================
-VN30 = [
-    "ACB.VN","BCM.VN","BID.VN","BVH.VN","CTG.VN","FPT.VN","GAS.VN","GVR.VN",
-    "HDB.VN","HPG.VN","MBB.VN","MSN.VN","MWG.VN","PLX.VN","POW.VN","SAB.VN",
-    "SHB.VN","SSB.VN","SSI.VN","STB.VN","TCB.VN","TPB.VN","VCB.VN","VHM.VN",
-    "VIB.VN","VIC.VN","VJC.VN","VNM.VN","VPB.VN","VRE.VN"
-]
+VNINDEX_ALL = [
+    # Nhóm VN30 (Bluechips)
+    "ACB.VN", "BCM.VN", "BID.VN", "BVH.VN", "CTG.VN", "FPT.VN", "GAS.VN", "GVR.VN",
+    "HDB.VN", "HPG.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "POW.VN", "SAB.VN",
+    "SHB.VN", "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN",
+    "VIB.VN", "VIC.VN", "VJC.VN", "VNM.VN", "VPB.VN", "VRE.VN",
 
+    # Nhóm Ngân hàng & Tài chính khác
+    "LPB.VN", "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN",
+    "VIX.VN", "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN", "TVB.VN",
+
+    # Nhóm Bất động sản & Xây dựng
+    "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "ITA.VN",
+    "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CRE.VN", "IJC.VN", "CII.VN", "HHV.VN",
+    "LCG.VN", "VCG.VN", "HT1.VN", "BCC.VN", "PC1.VN", "CTD.VN", "HBC.VN",
+
+    # Nhóm Thép & Tài nguyên
+    "HSG.VN", "NKG.VN", "SMC.VN", "TLH.VN", "TVN.VN", "VGS.VN", "DGC.VN", "CSV.VN",
+    "DCM.VN", "DPM.VN", "LAS.VN", "BFC.VN",
+
+    # Nhóm Dầu khí & Năng lượng
+    "PVD.VN", "PVT.VN", "PVS.VN", "GEG.VN", "REE.VN", "HDG.VN", "NT2.VN", "QTP.VN",
+
+    # Nhóm Sản xuất, Bán lẻ & Cảng biển
+    "VHC.VN", "ANV.VN", "IDI.VN", "MPC.VN", "FMC.VN", "PAN.VN", "DBC.VN", "BAF.VN",
+    "FRT.VN", "DGW.VN", "PET.VN", "PNJ.VN", "GMD.VN", "HAH.VN", "VSC.VN", "SGP.VN",
+
+    # Nhóm Cao su, Gỗ & Khác
+    "PHR.VN", "DPR.VN", "TRC.VN", "DRI.VN", "TTF.VN", "PTB.VN", "RAL.VN", "BMP.VN",
+    "NTP.VN", "TLG.VN", "GIL.VN", "TNG.VN", "MSH.VN", "VGT.VN"
+]
 # ==============================
 # SAFE DOWNLOAD (FALLBACK)
 # ==============================
@@ -39,7 +63,7 @@ def safe_download(ticker):
 def get_top_stocks(limit=20):
     try:
         raw = yf.download(
-            tickers=" ".join(VN30),
+            tickers=" ".join(VNINDEX_ALL),
             period="2d",
             group_by="ticker",
             auto_adjust=True,
@@ -49,7 +73,7 @@ def get_top_stocks(limit=20):
 
         results = []
 
-        for s in VN30:
+        for s in VNINDEX_ALL:
             try:
                 df = raw[s]
 
@@ -73,7 +97,7 @@ def get_top_stocks(limit=20):
         if not results:
             print("⚠️ Batch fail → fallback từng mã")
 
-            for s in VN30:
+            for s in VNINDEX_ALL:
                 df = safe_download(s)
 
                 if df is None:
@@ -121,7 +145,7 @@ def get_market_data():
 
     return {
         "vnindex": {},   # 🔥 giữ để không crash pipeline
-        "vn30": {},      # 🔥 giữ để không crash pipeline
+        "VNINDEX_ALL": {},      # 🔥 giữ để không crash pipeline
         "gainers": gainers,
         "losers": losers
     }
