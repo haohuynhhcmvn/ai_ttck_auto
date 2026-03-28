@@ -117,26 +117,47 @@ def generate_script(topic, market_data=None):
     lose_text = market_data.get("lose_text", "Đang cập nhật")
 
     prompt = f"""
-Viết script video TikTok tài chính chuyên nghiệp.
-YÊU CẦU CỰC NGHIÊM NGẶT:
-1. Mỗi câu chỉ từ 5 đến 10 từ.
-2. Kết thúc mỗi câu bằng dấu chấm.
-3. Không sử dụng dấu phẩy giữa câu (thay bằng dấu chấm nếu cần ngắt).
-4. Không dùng hashtag, không dùng biểu tượng cảm xúc.
-5. Hook ngay câu đầu về: {topic}.
+# ROLE: Bạn là Chuyên gia phân tích chiến lược tại một quỹ đầu tư lớn. 
+# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 90 giây (250-350 từ).
 
-DỮ LIỆU THỰC TẾ HÔM NAY:
-- Top tăng: {gain_text}.
-- Top giảm: {lose_text}.
+# THÔNG SỐ KỸ THUẬT (CỰC KỲ NGHIÊM NGẶT):
+1. Độ dài câu: Bắt buộc từ 5 đến 10 từ. Không được ngắn hơn, không được dài hơn.
+2. Dấu câu: Kết thúc mỗi câu bằng dấu chấm. Tuyệt đối không dùng dấu phẩy, dấu chấm phẩy hay dấu hai chấm.
+3. Định dạng: Không hashtag. Không biểu tượng cảm xúc. Chỉ dùng chữ và số.
+4. Nhịp điệu: MC cần đọc dứt khoát. Mỗi câu là một thông tin đắt giá.
 
-CẤU TRÚC SCRIPT:
-- VNINDEX: Tóm tắt xu hướng và tâm lý trong bối cảnh tình hình kinh tế, chính trị và xã hội trên thế giới và tại việt nam.
-- DÒNG TIỀN: 2-3 ngành hút tiền nhất.
-- TOP 5 CỔ PHIẾU: Liệt kê mã và lý do ngắn gọn (ưu tiên nhóm tăng).
-- KỸ THUẬT: Tín hiệu bùng nổ hoặc đảo chiều.
-- CHIẾN LƯỢC: Lời khuyên nắm giữ hoặc quan sát.
+# DỮ LIỆU ĐẦU VÀO:
+- Chủ đề chính: {topic}
+- Top tăng trưởng: {gain_text}
+- Top sụt giảm: {lose_text}
 
-Hãy viết khoảng 250-350 từ theo phong cách MC tài chính cho bản tin dài khoảng 90 giây.
+# CẤU TRÚC KỊCH BẢN (Triển khai logic chuyên sâu):
+
+PHẦN 1: HOOK (3-4 câu)
+- Đưa ra một nhận định gây sốc hoặc hưng phấn về {topic}.
+
+PHẦN 2: BỐI CẢNH VNINDEX & VĨ MÔ (Viết dài, chiếm 40% dung lượng)
+- Liên kết chặt chẽ giữa chỉ số DXY, lợi suất trái phiếu Mỹ với tỷ giá trong nước.
+- Phân tích tâm lý đám đông trước các tin tức chính trị toàn cầu.
+- Diễn giải tác động của dòng vốn ngoại đối với tâm lý khối nội. 
+- *Lưu ý: Chia nhỏ các phân tích phức tạp thành nhiều câu đơn 7 từ.*
+
+PHẦN 3: DÒNG TIỀN & NGÀNH (3-4 câu)
+- Chỉ tên 2-3 ngành đang là "vịnh tránh bão" hoặc "đầu tàu".
+- Giải thích ngắn gọn lý do dòng tiền thông minh chọn các nhóm này.
+
+PHẦN 4: TIÊU ĐIỂM CỔ PHIẾU (Dựa trên {gain_text})
+- Chọn lọc 5 mã nổi bật nhất.
+- Mỗi mã mô tả bằng 1 câu về giá và 1 câu về tín hiệu kỹ thuật/tin tức.
+
+PHẦN 5: CHIẾN LƯỢC & QUẢN TRỊ (Phần kết, viết sâu)
+- Đưa ra kịch bản hành động cụ thể cho vị thế đang cầm tiền và cầm hàng.
+- Nhấn mạnh vào quản trị rủi ro và điểm chặn lãi.
+
+# YÊU CẦU VỀ NGÔN NGỮ:
+Sử dụng thuật ngữ tài chính chuyên nghiệp như: Lực cầu chủ động, Áp lực chốt lời, Phân kỳ dương, Cản tâm lý, Tích lũy nền chặt.
+
+Hãy bắt đầu viết. Đảm bảo độ dài để MC đọc trong 90 giây.
 """
 
     print("🤖 Đang khởi tạo AI viết kịch bản...")
