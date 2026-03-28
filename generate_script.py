@@ -174,7 +174,7 @@ QUY TẮC TTS (RẤT QUAN TRỌNG):
   ví dụ 1.5 → một phẩy năm
 
 ĐỘ DÀI:
-200 đến 250 chữ
+100 đến 120 chữ
 
 FORMAT OUTPUT:
 
