@@ -1,5 +1,5 @@
 # ==============================
-# MARKET DATA PRO - YAHOO STABLE
+# MARKET DATA PRO - FAST + STABLE
 # ==============================
 
 import yfinance as yf
@@ -7,7 +7,7 @@ import pandas as pd
 import time
 
 # ==============================
-# DANH SÁCH VN30 (CHUẨN)
+# DANH SÁCH VN30
 # ==============================
 VN30 = [
     "ACB.VN","BCM.VN","BID.VN","BVH.VN","CTG.VN","FPT.VN","GAS.VN","GVR.VN",
@@ -17,7 +17,7 @@ VN30 = [
 ]
 
 # ==============================
-# SAFE DOWNLOAD (TRÁNH DIE API)
+# SAFE DOWNLOAD (FALLBACK)
 # ==============================
 def safe_download(ticker):
     try:
@@ -34,15 +34,26 @@ def safe_download(ticker):
 
 
 # ==============================
-# VNINDEX (GIẢ LẬP TỪ VNM)
+# VNINDEX (ƯU TIÊN THẬT → FALLBACK)
 # ==============================
 def get_vnindex():
-    """
-    ⚠️ Yahoo KHÔNG có VNINDEX thật
-    → dùng proxy từ VNM (ổn định nhất)
-    """
+    # 🔥 thử index thật trước
+    try:
+        df = yf.download("^VNINDEX", period="2d", progress=False)
 
-    df = safe_download("^VNINDEX.VN")
+        if df is not None and len(df) >= 2:
+            last = float(df["Close"].iloc[-1])
+            prev = float(df["Close"].iloc[-2])
+
+            return {
+                "close": round(last, 2),
+                "change": round(last - prev, 2)
+            }
+    except:
+        pass
+
+    # 🔥 fallback (VNM proxy)
+    df = safe_download("VNM.VN")
 
     if df is None:
         return {"close": "N/A", "change": "N/A"}
@@ -51,13 +62,10 @@ def get_vnindex():
         last = float(df["Close"].iloc[-1])
         prev = float(df["Close"].iloc[-2])
 
-        change = last - prev
-
         return {
             "close": round(last, 2),
-            "change": round(change, 2)
+            "change": round(last - prev, 2)
         }
-
     except:
         return {"close": "N/A", "change": "N/A"}
 
@@ -66,77 +74,107 @@ def get_vnindex():
 # VN30 INDEX (GIẢ LẬP)
 # ==============================
 def get_vn30(df):
-    """
-    Lấy trung bình VN30 → giả lập index
-    """
-
     try:
-        avg = df["Change"].mean()
+        if df.empty:
+            return {"close": "N/A", "change": "N/A"}
+
+        avg = df["change"].mean()
 
         return {
             "close": "N/A",
             "change": round(avg, 2)
         }
-
     except:
         return {"close": "N/A", "change": "N/A"}
 
 
 # ==============================
-# TOP STOCKS
+# TOP STOCKS (BATCH - SIÊU NHANH)
 # ==============================
 def get_top_stocks(limit=20):
-    results = []
+    try:
+        # 🔥 tải toàn bộ 1 lần
+        raw = yf.download(
+            tickers=" ".join(VN30),
+            period="2d",
+            group_by="ticker",
+            auto_adjust=True,
+            threads=True,
+            progress=False
+        )
 
-    for s in VN30:
-        df = safe_download(s)
+        results = []
 
-        if df is None:
-            continue
+        for s in VN30:
+            try:
+                df = raw[s]
 
-        try:
-            last = float(df["Close"].iloc[-1])
-            prev = float(df["Close"].iloc[-2])
+                if df is None or len(df) < 2:
+                    continue
 
-            pct = (last - prev) / prev * 100
+                last = float(df["Close"].iloc[-1])
+                prev = float(df["Close"].iloc[-2])
 
-            results.append({
-                "symbol": s.replace(".VN", ""),
-                "change": round(pct, 2)
-            })
+                pct = (last - prev) / prev * 100
 
-        except:
-            continue
+                results.append({
+                    "symbol": s.replace(".VN", ""),
+                    "change": round(pct, 2)
+                })
 
-        # ⚡ tránh rate limit
-        time.sleep(0.05)
+            except:
+                continue
 
-    if not results:
+        # 🔥 fallback nếu batch fail
+        if not results:
+            print("⚠️ Batch fail → fallback từng mã")
+
+            for s in VN30:
+                df = safe_download(s)
+
+                if df is None:
+                    continue
+
+                try:
+                    last = float(df["Close"].iloc[-1])
+                    prev = float(df["Close"].iloc[-2])
+
+                    pct = (last - prev) / prev * 100
+
+                    results.append({
+                        "symbol": s.replace(".VN", ""),
+                        "change": round(pct, 2)
+                    })
+
+                except:
+                    continue
+
+                time.sleep(0.05)
+
+        if not results:
+            return [], [], pd.DataFrame()
+
+        df_res = pd.DataFrame(results)
+
+        gainers = df_res.sort_values("change", ascending=False).head(limit)
+        losers = df_res.sort_values("change").head(limit)
+
+        gainers_list = list(zip(gainers["symbol"], gainers["change"]))
+        losers_list = list(zip(losers["symbol"], losers["change"]))
+
+        return gainers_list, losers_list, df_res
+
+    except Exception as e:
+        print("❌ Lỗi get_top_stocks:", e)
         return [], [], pd.DataFrame()
 
-    df = pd.DataFrame(results)
-
-    gainers = df.sort_values("change", ascending=False).head(limit)
-    losers = df.sort_values("change").head(limit)
-
-    gainers_list = list(zip(gainers["symbol"], gainers["change"]))
-    losers_list = list(zip(losers["symbol"], losers["change"]))
-
-    return gainers_list, losers_list, df
-
 
 # ==============================
-# MAIN FUNCTION
+# MAIN FUNCTION (KHÔNG ĐỔI OUTPUT)
 # ==============================
 def get_market_data():
-    """
-    Output chuẩn cho toàn pipeline
-    """
-
-    # 🔥 lấy top cổ phiếu
     gainers, losers, df = get_top_stocks()
 
-    # 🔥 lấy index
     vnindex = get_vnindex()
     vn30 = get_vn30(df)
 
