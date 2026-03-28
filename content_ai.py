@@ -1,77 +1,102 @@
 # ==============================
-# SCRIPT → SOCIAL CONTENT (PRO MAX VIRAL)
+# GENERATE SOCIAL CONTENT (AI POWERED)
 # ==============================
 
+import requests
+import os
+import time
 import random
 
+# ==============================
+# CONFIG & API KEYS (Đồng nhất với generate_script)
+# ==============================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
+QWEN_MODEL = "qwen/qwen3.5-122b-a10b"
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# ==============================
+# LLM CALLS (Giữ nguyên logic gọi API của bạn)
+# ==============================
+def call_qwen_social(prompt, retry=2):
+    url = "https://integrate.api.nvidia.com/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": QWEN_MODEL,
+        "messages": [
+            {"role": "system", "content": "Bạn là chuyên gia sáng tạo nội dung mạng xã hội mảng tài chính. Viết nội dung thu hút, sử dụng emoji thông minh."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 800
+    }
+    for i in range(retry):
+        try:
+            res = requests.post(url, headers=headers, json=payload, timeout=25)
+            if res.status_code == 200:
+                return res.json()["choices"][0]["message"]["content"]
+        except Exception as e:
+            print(f"⚠️ Qwen Social lỗi: {e}")
+            time.sleep(2)
+    return None
+
+def call_gemini_social(prompt, retry=2):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    for i in range(retry):
+        try:
+            res = requests.post(url, json=payload, timeout=25)
+            if res.status_code == 200:
+                return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            print(f"⚠️ Gemini Social lỗi: {e}")
+            time.sleep(2)
+    return None
+
+# ==============================
+# MAIN FUNCTION: SCRIPT TO CONTENT
+# ==============================
 def script_to_content(script, topic=None):
-    lines = script.split("...")
+    """
+    Sử dụng AI để chuyển đổi script TTS sang nội dung mạng xã hội chuyên nghiệp.
+    """
+    
+    prompt = f"""
+# NHIỆM VỤ: Chuyển đổi kịch bản video (dùng để đọc) thành bài đăng mạng xã hội (TikTok/Facebook/Telegram).
+# CHỦ ĐỀ: {topic if topic else "Bản tin tài chính"}
+# KỊCH BẢN GỐC: {script}
 
-    content = []
+# YÊU CẦU CHI TIẾT:
+1. Chuyển đổi từ phiên âm sang viết chuẩn: 'Vờ ni In đéc' -> 'VN-Index', 'phần trăm' -> '%', 'phẩy' -> dấu chấm thập phân.
+2. Thêm Emoji (📈, 🚀, 🏦, 📉) phù hợp với ngữ cảnh tăng giảm.
+3. Cấu trúc bài đăng:
+   - Header: Hook giật gân về {topic}.
+   - Body: Các gạch đầu dòng phân tích thị trường dứt khoát.
+   - List: Liệt kê các mã cổ phiếu nổi bật (nếu có).
+   - CTA: Kêu gọi Follow và miễn trừ trách nhiệm.
+4. Hashtag: 5-7 cái liên quan (ví dụ: #chungkhoan #vimo #dautu).
 
-    # ==============================
-    # HEADER (HOOK)
-    # ==============================
-    if topic:
-        content.append(f"🚨 {topic.upper()}")
+Chỉ trả về nội dung bài đăng, không giải thích thêm.
+"""
 
-    content.append("📊 BẢN TIN CHỨNG KHOÁN HÔM NAY\n")
+    print("🤖 AI đang viết nội dung bài đăng Social...")
+    # Thử Qwen trước, nếu lỗi thì dùng Gemini
+    social_post = call_qwen_social(prompt) or call_gemini_social(prompt)
 
-    # ==============================
-    # CLEAN LINES
-    # ==============================
-    clean_lines = []
+    if not social_post:
+        print("⚠️ Cả 2 AI Social lỗi, dùng logic dự phòng thủ công.")
+        # Logic dự phòng (Fallback) giống bản cũ của bạn
+        lines = script.split(".")
+        content = [f"🚨 {topic.upper()}" if topic else "📊 BẢN TIN CHỨNG KHOÁN"]
+        for i, line in enumerate(lines[:5]):
+            content.append(f"👉 {line.strip()}")
+        content.append("\n#chungkhoan #stock #dautu")
+        return "\n".join(content)
 
-    for line in lines:
-        line = line.strip()
+    return social_post.strip()
 
-        if not line or len(line) < 5:
-            continue
-
-        line = line.replace("  ", " ")
-
-        clean_lines.append(line)
-
-    # ==============================
-    # BODY (TĂNG NHỊP)
-    # ==============================
-    for i, line in enumerate(clean_lines):
-
-        if i == 0:
-            # 🔥 hook mạnh hơn
-            content.append(f"🔥 {line.upper()}")
-
-        elif i == 1:
-            content.append(f"⚠️ {line}")
-
-        elif i == 2:
-            content.append(f"🚀 {line}")
-
-        elif i < 5:
-            content.append(f"⚡ {line}")
-
-        else:
-            content.append(f"👉 {line}")
-
-    # ==============================
-    # CTA (STRONG)
-    # ==============================
-    ctas = [
-        "📈 Follow ngay trước khi quá muộn",
-        "🚀 Đừng bỏ lỡ nhịp tăng tiếp theo",
-        "⚠️ Người biết sớm đang vào lệnh",
-        "🔥 Bạn đã sẵn sàng cho cơ hội này?"
-    ]
-
-    content.append("\n⚠️ Cơ hội luôn đi kèm rủi ro")
-    content.append(random.choice(ctas))
-
-    # ==============================
-    # HASHTAG (ALGO TỐI ƯU)
-    # ==============================
-    content.append(
-        "\n#chungkhoan #stock #dautu #vnstock #fomo #investing #taichinh"
-    )
-
-    return "\n".join(content)
+# --- TEST ---
+if __name__ == "__main__":
+    test_script = "Vờ ni In đéc hôm nay bùng nổ mạnh mẽ. Thị trường tăng mười lăm phẩy năm điểm. Nhóm thép dẫn đầu với mã Hòa Phát tăng kịch trần."
+    print(script_to_content(test_script, topic="VNINDEX BÙNG NỔ"))
