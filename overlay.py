@@ -100,7 +100,7 @@ def draw_overlay(data, size=(720, 1280)):
         y += 65
 
     # --- PHẦN LOSERS ---
-    y += 85 # Khoảng cách giữa 2 bảng
+    y += 150 # Khoảng cách giữa 2 bảng
     draw.text((50, y), "▼ TOP LOSERS", font=f_section, fill=C_DOWN)
     y += 70
     
