@@ -75,6 +75,7 @@ def process_video(topic, index):
             f"Yêu cầu: VIẾT HOA | Độ dài các câu xấp xỉ nhau | Ngăn cách bằng ký tự ' • ' | "
             f"Mỗi tin bắt đầu bằng một Emoji phù hợp. "
             f"Ví dụ: 🚀 SSI BÙNG NỔ THANH KHOẢN • 🟢 VN-INDEX GIỮ VỮNG SẮC XANH • ..."
+             f"Kịch bản: {script}"
         )
         
         # Gọi AI tóm tắt
