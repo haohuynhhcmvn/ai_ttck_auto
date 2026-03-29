@@ -72,9 +72,14 @@ def process_video(topic, index):
     print("6️⃣ & 7️⃣ Đang tóm tắt tin vắn và tạo dải chữ chạy ngang...")
     try:
         # Prompt tóm tắt ngắn gọn để làm Ticker
-        ticker_prompt = (
-            f"Dựa trên kịch bản sau, hãy trích ra 5-6 câu tin vắn tài chính cực ngắn. "
-            f"Yêu cầu: Viết hoa, đúng chính tả mã cổ phiếu, cách nhau bằng dấu |. "
+       ticker_prompt = (
+            f"Dựa trên kịch bản sau, hãy trích ra 5-6 tin vắn tài chính 'giật gân' cực ngắn. "
+            f"Yêu cầu: \n"
+            f"1. VIẾT HOA TOÀN BỘ, cách nhau bằng dấu |. \n"
+            f"2. Sử dụng các động từ mạnh: BÙNG NỔ, QUAY XE, THÁO CHẠY, ĐẠI TIỆC, RUNG LẮC, CHẠM ĐỈNH. \n"
+            f"3. Thêm Emoji phù hợp ở mỗi tin (🚀, 🔥, 📊, 💎, 🔴, 🟢). \n"
+            f"4. Giữ đúng mã cổ phiếu (VD: SSI, HPG, VND). \n"
+            f"5. Độ dài mỗi tin dưới 10 từ. \n"
             f"Kịch bản: {script}"
         )
         # Gọi AI tóm tắt từ script gốc
