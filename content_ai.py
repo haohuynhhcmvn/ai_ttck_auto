@@ -28,7 +28,7 @@ def call_qwen_social(prompt, retry=3): # Tăng lên 3 lần thử
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là chuyên gia sáng tạo nội dung tài chính. Viết nội dung ngắn gọn, thu hút kèm emoji."},
+            {"role": "system", "content": "Bạn là chuyên gia Content Creator tài chính. Nhiệm vụ của bạn là tạo bài đăng thu hút dựa trên dữ liệu, nhưng tuyệt đối tuân thủ chính sách cộng đồng: KHÔNG hứa hẹn lợi nhuận, KHÔNG dùng từ ngữ gây sốc tiêu cực hoặc lôi kéo đầu tư. Sử dụng emoji khéo léo để tăng tính trực quan."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
@@ -81,23 +81,24 @@ def script_to_content(script, topic=None):
     """
     
     prompt = f"""
-# NHIỆM VỤ: Chuyển đổi kịch bản video (dùng để đọc) thành bài đăng mạng xã hội (TikTok/Facebook/Telegram) chỉ rút gọn lại tối đa 200 từ.
-# CHỦ ĐỀ: {topic if topic else "Bản tin tài chính"}
+# NHIỆM VỤ: Chuyển đổi kịch bản đọc (TTS) thành bài đăng mạng xã hội chuyên nghiệp (Tối đa 200 từ).
+# CHỦ ĐỀ: {topic if topic else "Phân tích thị trường"}
 # KỊCH BẢN GỐC: {script}
 
-# YÊU CẦU CHI TIẾT:
-1. Chuyển đổi từ phiên âm sang viết chuẩn: 'Vờ ni In đéc' -> 'VN-Index', 'phần trăm' -> '%', 'phẩy' -> dấu chấm thập phân.
-2. Thêm Emoji (📈, 🚀, 🏦, 📉) phù hợp với ngữ cảnh tăng giảm.
-3. Cấu trúc bài đăng:
-   - Header: Hook giật gân về {topic}.
-   - Body: Các gạch đầu dòng phân tích thị trường dứt khoát.
-   - List: Liệt kê các mã cổ phiếu nổi bật (nếu có).
-   - CTA: Kêu gọi Follow và miễn trừ trách nhiệm.
-4. Hashtag: 5-7 cái liên quan (ví dụ: #chungkhoan #vimo #dautu).
+# QUY TẮC VIẾT (NÉ VI PHẠM):
+1. CHUẨN HÓA: 'Vờ ni In đéc' -> 'VN-Index', 'phần trăm' -> '%', 'phẩy' -> dấu chấm thập phân.
+2. NÉ TỪ KHÓA ĐEN: Không dùng "Làm giàu", "Kiếm tiền", "Sập", "Đáy/Đỉnh", "Cam kết". Thay bằng "Vận động thị trường", "Quản trị danh mục", "Tín hiệu kỹ thuật".
+3. THỰC TẾ: Dựa hoàn toàn vào dữ liệu trong kịch bản gốc, không tự chế thêm các nhận định chủ quan quá đà.
 
-Chỉ trả về nội dung bài đăng, không giải thích thêm.
+# CẤU TRÚC BÀI ĐĂNG:
+- Tiêu đề: Đưa ra vấn đề/câu hỏi tò mò về {topic} (Ví dụ: "Góc nhìn về vận động của VN-Index hôm nay").
+- Nội dung chính: 3-4 gạch đầu dòng phân tích dứt khoát về dòng tiền và nhóm ngành.
+- Danh sách: Liệt kê các mã cổ phiếu nổi bật kèm biến động %.
+- Kết luận: Nhấn mạnh vào việc quan sát kỷ luật và quản trị rủi ro.
+- Hashtag: 5 cái liên quan (Ví dụ: #chungkhoan #vimo #kienthucdautu).
+
+Chỉ trả về nội dung bài đăng. Không giải thích thêm.
 """
-
     print("🤖 AI đang viết nội dung bài đăng Social...")
     # Thử Qwen trước, nếu lỗi thì dùng Gemini
     social_post = call_qwen_social(prompt) or call_gemini_social(prompt)
