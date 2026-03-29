@@ -16,7 +16,7 @@ def create_ticker_sub(ticker_text, duration_seconds, filename="ticker.ass"):
     
     # Thêm khoảng trống (Padding) lớn ở hai đầu để tạo vòng lặp mượt mà
     padding = " " * 15
-    full_display = f"{padding}• TÂM SỰ 24H: {clean_text} • DỮ LIỆU TÀI CHÍNH CẬP NHẬT LIÊN TỤC •{padding}"
+    full_display = f"{padding}• TIN TỨC CẬP NHẬT: {clean_text} • DỮ LIỆU TÀI CHÍNH CẬP NHẬT LIÊN TỤC •{padding}"
 
     # --- 2. CẤU HÌNH STYLE (CHÍNH GIỮA MÀN HÌNH) ---
     # Alignment 5: Chính giữa tâm video (Middle Center)
