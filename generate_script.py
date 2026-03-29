@@ -76,7 +76,7 @@ def call_qwen(prompt, retry=3): # Tăng lên 3 lần thử cho chắc chắn
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là MC tài chính TikTok. Viết câu ngắn 5-15 từ. Kết thúc bằng dấu chấm."},
+            {"role": "system", "content": "Bạn là biên tập viên tài chính TikTok chuyên nghiệp. Viết câu ngắn 5-15 từ, kết thúc bằng dấu chấm. Tuyệt đối không dùng từ ngữ cam kết lợi nhuận hoặc lôi kéo đầu tư trực tiếp để đảm bảo an toàn chính sách cộng đồng."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.6,
@@ -136,47 +136,38 @@ def generate_script(topic, market_data=None):
     lose_text = market_data.get("lose_text", "Đang cập nhật")
 
     prompt = f"""
-# ROLE: Bạn là Chuyên gia phân tích chiến lược tại một quỹ đầu tư lớn. 
-# NHIỆM VỤ: Viết kịch bản bản tin tài chính TikTok "Deep Dive" dài 180 giây (450-500 từ) sao cho phù hợp với tốc độ đọc 1.1x.
+# ROLE: Bạn là Chuyên gia phân tích chiến lược am hiểu thuật toán kiểm duyệt nội dung tài chính trên TikTok.
+# NHIỆM VỤ: Viết kịch bản bản tin "Deep Dive" 180 giây (450-500 từ).
 
-# THÔNG SỐ KỸ THUẬT (CỰC KỲ NGHIÊM NGẶT):
-1. Độ dài câu: Bắt buộc từ 5 đến 15 từ. Không được ngắn hơn, không được dài hơn.
-2. Dấu câu: Kết thúc mỗi câu bằng dấu chấm. Tuyệt đối không dùng dấu phẩy, dấu chấm phẩy hay dấu hai chấm.
-3. Định dạng: Không hashtag. Không biểu tượng cảm xúc. Chỉ dùng chữ và số.
-4. Nhịp điệu: MC cần đọc dứt khoát. Mỗi câu là một thông tin đắt giá.
+# QUY TẮC AN TOÀN NỘI DUNG (BẮT BUỘC):
+- KHÔNG dùng: "Làm giàu", "Kiếm tiền", "Cam kết", "Chắc chắn", "Múc/Xúc/Phím", "Lãi XX%".
+- KHÔNG đưa ra lời khuyên đầu tư trực tiếp kiểu "Bạn nên mua...".
+- TẬP TRUNG vào: Cảnh báo bẫy tâm lý, phân tích dữ liệu vĩ mô, chia sẻ kinh nghiệm quản trị rủi ro.
+
+# THÔNG SỐ KỸ THUẬT:
+1. Độ dài câu: Từ 5 đến 15 từ. Kết thúc bằng dấu chấm.
+2. Tuyệt đối không dùng dấu phẩy, dấu hai chấm, hashtag hay emoji.
+3. Chỉ dùng chữ tiếng Việt và số.
 
 # DỮ LIỆU ĐẦU VÀO:
-- Chủ đề chính: {topic}
-- Top tăng trưởng: {gain_text}
-- Top sụt giảm: {lose_text}
+- Chủ đề: {topic}
+- Tăng: {gain_text} | Giảm: {lose_text}
 
-# CẤU TRÚC KỊCH BẢN (Triển khai logic chuyên sâu):
-
+# CẤU TRÚC:
 PHẦN 1: HOOK (3-4 câu)
-- Đưa ra một nhận định gây sốc hoặc hưng phấn về {topic}.
+- Đưa ra một câu hỏi hoặc sự thật ngầm hiểu gây tò mò về {topic}. 
+- Ví dụ: "Bạn đã bao giờ tự hỏi tại sao đám đông thường sai ở vùng đỉnh chưa."
 
-PHẦN 2: BỐI CẢNH VNINDEX & VĨ MÔ (Viết dài, chiếm 40% dung lượng)
-- Liên kết chặt chẽ giữa chỉ số DXY, lợi suất trái phiếu Mỹ với tỷ giá trong nước.
-- Phân tích tâm lý đám đông trước các tin tức kinh tế, lãi suất chính trị, lạm phát hoặc chiến tranh phạm vi toàn cầu và trong nước (dẫn chiếu 3 đến 5 tin tức nổi bật, nóng hổi).
-- Diễn giải tác động của dòng vốn ngoại đối với tâm lý khối nội. 
-- *Lưu ý: Chia nhỏ các phân tích phức tạp thành nhiều câu đơn 7-15 từ.*
+PHẦN 2: VĨ MÔ & TÂM LÝ (40%)
+- Phân tích liên kết DXY, lợi suất trái phiếu và tỷ giá. 
+- Chỉ ra 3-5 tin tức nóng hổi ảnh hưởng đến dòng tiền.
 
-PHẦN 3: DÒNG TIỀN & NGÀNH (3-4 câu)
-- Chỉ tên 2-3 ngành đang là "vịnh tránh bão" hoặc "đầu tàu".
-- Giải thích ngắn gọn lý do dòng tiền thông minh chọn các nhóm này.
+PHẦN 3: DÒNG TIỀN & PHẦN 4: TIÊU ĐIỂM
+- Phân tích vận động của {gain_text} dưới góc độ kỹ thuật (Lực cầu, nền giá).
 
-PHẦN 4: TIÊU ĐIỂM CỔ PHIẾU (Dựa trên {gain_text})
-- Chọn lọc 5 mã nổi bật nhất.
-- Mỗi mã mô tả bằng 1 câu về giá và 1 câu về tín hiệu kỹ thuật/tin tức.
-
-PHẦN 5: CHIẾN LƯỢC & QUẢN TRỊ (Phần kết, viết sâu)
-- Đưa ra kịch bản hành động cụ thể cho vị thế đang cầm tiền và cầm hàng.
-- Nhấn mạnh vào quản trị rủi ro và điểm chặn lãi.
-
-# YÊU CẦU VỀ NGÔN NGỮ:
-Sử dụng thuật ngữ tài chính chuyên nghiệp như: Lực cầu chủ động, Áp lực chốt lời, Phân kỳ dương, Cản tâm lý, Tích lũy nền chặt.
-
-Hãy bắt đầu viết. Đảm bảo độ dài để MC đọc trong 180 giây.
+PHẦN 5: CHIẾN LƯỢC (Viết sâu)
+- Tập trung vào tư duy quản trị vốn và các kịch bản thị trường có thể xảy ra.
+- Kết thúc bằng một câu hỏi mở để tăng tương tác.
 """
 
     print("🤖 Đang khởi tạo AI viết kịch bản...")
