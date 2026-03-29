@@ -28,12 +28,12 @@ def call_qwen(prompt, retry=3):
             {
                 "role": "system",
                 "content": """
-Bạn là chuyên gia sáng tạo nội dung TikTok tài chính.
-
-Nhiệm vụ:
-- Tạo topic gây tò mò cực mạnh
-- Khiến người xem phải click ngay
-- Ngắn gọn, sắc bén
+Bạn là chuyên gia sáng tạo nội dung TikTok tài chính chuyên nghiệp, am hiểu thuật toán kiểm duyệt.
+Nhiệm vụ: 
+- Tạo topic dựa trên 'Insight' (Sự thật ngầm hiểu) và 'Cảnh báo rủi ro'.
+- Tuyệt đối không dùng từ hứa hẹn lợi nhuận, cam kết, hoặc lôi kéo đầu tư.
+- Tập trung vào: Bẫy tâm lý, sai lầm phổ biến, kinh nghiệm quản trị vốn.
+- Ngôn ngữ: Sắc bén, ngắn gọn, gây tò mò nhưng an toàn chính sách.
 """
             },
             {
@@ -112,16 +112,23 @@ def clean_topics(text):
 
 def generate_topics():
     prompt = """
-Tạo 5 topic video TikTok về chứng khoán Việt Nam:
+Nhiệm vụ: Tạo 5 topic video TikTok về chứng khoán Việt Nam.
 
-YÊU CẦU:
-- Hook mạnh
-- Gây tò mò
-- Có yếu tố sợ mất tiền hoặc cơ hội lớn
-- Ngắn gọn dưới 12 từ
-- Không ký hiệu đặc biệt
+CHIẾN THUẬT NÉ VI PHẠM (QUAN TRỌNG):
+- KHÔNG dùng từ: Cam kết, chắc chắn, làm giàu, kiếm tiền nhanh, phím kèo, múc, xúc, lãi XX%.
+- DÙNG các hướng: Cảnh báo rủi ro, bẫy tâm lý, bài học xương máu, sự thật ngầm hiểu, tư duy ngược.
+- Thay vì "Kiếm tiền", hãy dùng "Quản trị vốn" hoặc "Tối ưu hiệu suất".
 
-Chỉ trả về danh sách, mỗi dòng 1 topic
+YÊU CẦU ĐỊNH DẠNG:
+- Hook cực mạnh, đánh vào sự tò mò hoặc nỗi sợ mất tiền.
+- Ngắn gọn dưới 12 từ.
+- Không dùng ký hiệu đặc biệt (như @, #, $, %).
+- Chỉ trả về danh sách, mỗi dòng 1 topic, không đánh số.
+
+VÍ DỤ MẪU:
+- Tại sao 90% nhà đầu tư mất tiền tháng này
+- Sự thật về dòng tiền lớn ít người kể
+- Bẫy tâm lý vùng đỉnh bạn cần tránh
 """
 
     # ==============================
