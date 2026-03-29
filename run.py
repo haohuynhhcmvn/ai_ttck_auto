@@ -1,18 +1,19 @@
 # ==============================
-# MAIN PIPELINE (FINAL PRO MAX)
+# MAIN PIPELINE (FINAL PRO MAX - TICKER VERSION)
 # ==============================
 
 import os
 import sys
+from moviepy.editor import AudioFileClip
 
 # Import các modules tự xây dựng
 try:
     from topic_ai import generate_topics
-    from generate_script import generate_script
+    from generate_script import generate_script, call_gemini  # Thêm call_gemini để tóm tắt
     from content_ai import script_to_content
     from tts import text_to_speech
-    from transcribe import transcribe
-    from subtitle import create_subtitles
+    # Loại bỏ transcribe và subtitle cũ
+    import sub_utils 
     from render import render_video
     from upload_youtube import upload_video
     from telegram import send_message, send_video
@@ -28,25 +29,22 @@ except ImportError as e:
 def process_video(topic, index):
     print(f"\n🚀 BẮT ĐẦU XỬ LÝ VIDEO {index}: {topic}")
 
-    # --- BƯỚC 1: FETCH MARKET DATA (ƯU TIÊN HÀNG ĐẦU) ---
+    # --- BƯỚC 1: FETCH MARKET DATA ---
     print("1️⃣ Đang lấy dữ liệu thị trường thực tế...")
     try:
         market_data = get_market_data()
-        # Đảm bảo market_data không rỗng để AI có số liệu viết script
     except Exception as e:
         print(f"⚠️ Lỗi lấy Market Data: {e}")
         market_data = {}
 
-    # --- BƯỚC 2: GENERATE SCRIPT (DÙNG DATA THẬT) ---
+    # --- BƯỚC 2: GENERATE SCRIPT ---
     print("2️⃣ AI đang biên soạn nội dung...")
-    # Truyền thêm market_data vào để script có số liệu VNINDEX, Top tăng/giảm
     script = generate_script(topic, market_data)
 
     if not script or len(script) < 20:
-        print("❌ Script trống hoặc quá ngắn → Bỏ qua")
+        print("❌ Script trống → Bỏ qua")
         return
 
-    # Lưu bản gốc để đối chiếu
     save_text(script, f"raw_v{index}")
 
     # --- BƯỚC 3: CLEAN TEXT FOR TTS ---
@@ -55,45 +53,47 @@ def process_video(topic, index):
     save_text(clean_script, f"clean_v{index}")
 
     # --- BƯỚC 4: SOCIAL CONTENT ---
-    print("4️⃣ Tạo nội dung đăng mạng xã hội (Caption)...")
+    print("4️⃣ Tạo nội dung đăng mạng xã hội...")
     content = script_to_content(script, topic)
 
     # --- BƯỚC 5: TEXT TO SPEECH ---
     print("5️⃣ Đang chuyển đổi văn bản thành âm thanh...")
     try:
         audio = text_to_speech(clean_script)
+        # Lấy thời lượng thực tế của audio để đồng bộ chữ chạy
+        audio_clip = AudioFileClip(audio)
+        duration = audio_clip.duration
+        audio_clip.close()
     except Exception as e:
         print(f"❌ Lỗi TTS: {e}")
         return
 
-    # --- BƯỚC 6: TRANSCRIBE ---
-    print("6️⃣ Đang tách chữ và lấy timestamp...")
+    # --- BƯỚC 6 & 7: GENERATE TICKER (THAY THẾ TRANSCRIBE & SUBTITLE) ---
+    print("6️⃣ & 7️⃣ Đang tóm tắt tin vắn và tạo dải chữ chạy ngang...")
     try:
-        words = transcribe(audio)
+        # Prompt tóm tắt ngắn gọn để làm Ticker
+        ticker_prompt = (
+            f"Dựa trên kịch bản sau, hãy trích ra 5-6 câu tin vắn tài chính cực ngắn. "
+            f"Yêu cầu: Viết hoa, đúng chính tả mã cổ phiếu, cách nhau bằng dấu |. "
+            f"Kịch bản: {script}"
+        )
+        # Gọi AI tóm tắt từ script gốc
+        summary_text = call_gemini(ticker_prompt) 
+        
+        # Tạo file ASS chạy ngang (Ticker)
+        ass_file = sub_utils.create_ticker_sub(summary_text, duration)
     except Exception as e:
-        print(f"⚠️ Lỗi Transcribe: {e}")
-        words = []
-
-    # --- BƯỚC 7: SUBTITLE (.ASS) ---
-    print("7️⃣ Khởi tạo file phụ đề...")
-    try:
-        ass_file = create_subtitles(words)
-    except Exception as e:
-        print(f"⚠️ Lỗi tạo Subtitle: {e}")
+        print(f"⚠️ Lỗi tạo Ticker: {e}")
         ass_file = None
 
-    # ==========================
-    # 8. RENDER VIDEO
-    # ==========================
+    # --- BƯỚC 8: RENDER VIDEO ---
     print("8️⃣ Render video")
     output = f"output_{index}.mp4"
     
     try:
-        # BỎ keyword 'audio=', 'subtitle=' nếu tên biến trong render.py khác
-        # Hoặc truyền đúng tên biến đã định nghĩa:
         render_video(
-            audio_path=audio,    # Sửa từ 'audio' thành 'audio_path'
-            subtitles=ass_file,  # Sửa từ 'subtitle' thành 'subtitles'
+            audio_path=audio,
+            subtitles=ass_file,  # Truyền file ticker .ass vào
             output=output,
             topic=topic,
             market_data=market_data,
@@ -114,13 +114,10 @@ def process_video(topic, index):
     # --- BƯỚC 10: TELEGRAM NOTIFICATION ---
     print("🔟 Đang gửi thông báo Telegram...")
     try:
-        #full_msg = f"🎬 **Video mới đã sẵn sàng!**\n\n📌 Chủ đề: {topic}\n🔗 Link: {url}\n\n📝 **Caption:**\n{content}"
-        full_msg = f"{content}"
-        send_message(full_msg)
+        send_message(f"{content}\n\n🔗 Link: {url}")
         send_video(output)
     except Exception as e:
         print(f"⚠️ Lỗi Telegram: {e}")
-
 
 # ==============================
 # MAIN ENGINE
@@ -130,20 +127,14 @@ def main():
     print("🔥 HỆ THỐNG AUTO-VIDEO CHỨNG KHOÁN START")
     print("="*40)
 
-    # Đảm bảo có thư mục log
     os.makedirs("logs", exist_ok=True)
 
     try:
         topics = generate_topics()
     except Exception as e:
         print(f"⚠️ Lỗi lấy Topic AI: {e}")
-        topics = []
-
-    # Nếu AI lỗi, dùng topic mặc định
-    if not topics:
         topics = ["Nhận định thị trường chứng khoán hôm nay"]
 
-    # Giới hạn 1 video mỗi lần chạy để tránh quá tải/timeout
     for i, topic in enumerate(topics[:1]):
         try:
             process_video(topic, i)
@@ -152,7 +143,6 @@ def main():
 
     print("\n✅ TẤT CẢ TIẾN TRÌNH ĐÃ HOÀN TẤT")
     print("="*40)
-
 
 if __name__ == "__main__":
     main()
