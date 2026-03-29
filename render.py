@@ -11,9 +11,8 @@ except ImportError:
     def draw_overlay(data): return None
 
 def create_random_slideshow(folder_path, target_duration):
-    """Tạo video nền từ ảnh PNG ngẫu nhiên với hiệu ứng chuyển cảnh mờ dần"""
+    """Tạo video nền từ ảnh PNG ngẫu nhiên, tự động LOOP nếu thiếu ảnh"""
     print(f"🖼️ Đang tạo slideshow từ: {folder_path}")
-    # ĐÃ ĐỔI SANG QUÉT FILE .PNG
     search_path = os.path.join(folder_path, "*.png")
     all_images = glob.glob(search_path)
     
@@ -21,49 +20,52 @@ def create_random_slideshow(folder_path, target_duration):
         print(f"⚠️ Không tìm thấy ảnh PNG trong {folder_path}!")
         return None
 
+    # Xáo trộn danh sách ảnh gốc
     random.shuffle(all_images)
     
     clips = []
     current_total_dur = 0
     img_display_dur = 4 
     transition_dur = 1  
-
-    for img_p in all_images:
+    
+    # --- LOGIC LOOP ẢNH ---
+    # Nếu chạy hết danh sách ảnh mà chưa đủ thời gian, nó sẽ lặp lại từ đầu
+    i = 0
+    while current_total_dur < target_duration:
+        img_p = all_images[i % len(all_images)] # Dùng phép chia lấy dư để quay vòng (Loop)
         try:
-            # Bước 1: Load ảnh và ép về 30 FPS
             clip = ImageClip(img_p).set_duration(img_display_dur).set_fps(30)
             
-            # Bước 2: Resize nắn khung hình về 720x1280 ngay từ MoviePy
-            # Ta dùng resize để chiều cao là 1280, sau đó crop lấy tâm 720
+            # Resize và Crop chuẩn 9:16 ngay tại đây
             clip = clip.resize(height=1280)
             w, h = clip.size
             if w > 720:
                 clip = clip.crop(x_center=w/2, width=720)
             elif w < 720:
-                clip = clip.resize(width=720) # Trường hợp ảnh quá nhỏ
-
-            # Bước 3: Thêm hiệu ứng chuyển cảnh
+                clip = clip.resize(width=720)
+                
             clip = clip.set_position("center").crossfadein(transition_dur).crossfadeout(transition_dur)
-            
             clips.append(clip)
-            current_total_dur += (img_display_dur - transition_dur)
             
-            if current_total_dur >= target_duration:
-                break
+            # Tính toán thời lượng thực tế (trừ đi phần chồng lấp chuyển cảnh)
+            current_total_dur += (img_display_dur - transition_dur)
+            i += 1
+            
+            # Tránh vòng lặp vô tận nếu có lỗi cực nặng (Fail-safe)
+            if i > 100: break 
+            
         except Exception as e:
             print(f"❌ Lỗi xử lý ảnh {img_p}: {e}")
+            i += 1
             continue
 
     if not clips:
         return None
 
-    # Ghép các clip
     final_video = concatenate_videoclips(clips, method="compose")
-    
-    # SỬA LỖI Ở ĐÂY: MoviePy không nhận 'size' trong write_videofile
-    # Ta đã xử lý size ở từng clip con phía trên, nên final_video sẽ tự có size chuẩn.
     temp_bg_name = f"temp_bg_{random.randint(100,999)}.mp4"
     
+    # Xuất file nền tạm với kích thước chuẩn
     final_video.write_videofile(
         temp_bg_name, 
         fps=30, 
@@ -90,7 +92,6 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         try:
             img_array = draw_overlay(market_data)
             if img_array is not None:
-                # Ép kích thước overlay PNG đúng 720x1280
                 ovl_img = Image.fromarray(img_array).resize((720, 1280))
                 ovl_img.save(overlay_path)
                 has_overlay = True
@@ -102,9 +103,8 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
 
     # --- 4. CẤU HÌNH INPUTS ---
     cmd = ["ffmpeg", "-y"]
-
-    # ĐƯỜNG DẪN THƯ MỤC ẢNH (Assets có chữ 's' hay không, bạn kiểm tra kỹ nhé)
     picture_folder = "assets/picture" 
+    
     if os.path.exists(picture_folder):
         temp_bg_file = create_random_slideshow(picture_folder, duration)
 
@@ -121,27 +121,25 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
     cmd += ["-i", audio_path]
     audio_idx = 2 if has_overlay else 1
 
-    # --- 5. FILTER COMPLEX (RÀ SOÁT KỸ PHẦN NÀY) ---
+    # --- 5. FILTER COMPLEX (ÉP DAR 9:16 CHO TELEGRAM) ---
     filter_parts = []
     
-    # Ép background về chuẩn 9:16, khóa SAR=1 để pixel không bị méo
-    filter_parts.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1[bg]")
+    # Thêm setdar=9/16 để ép tỉ lệ hiển thị vào Header video
+    filter_parts.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,setdar=9/16[bg]")
     last_v = "[bg]"
 
     if has_overlay:
-        # Scale lại lớp overlay cho chắc chắn và đè lên
-        filter_parts.append(f"[1:v]scale=720:1280,setsar=1[ovl];{last_v}[ovl]overlay=0:0:shortest=1[v_over]")
+        filter_parts.append(f"[1:v]scale=720:1280,setsar=1,setdar=9/16[ovl];{last_v}[ovl]overlay=0:0:shortest=1[v_over]")
         last_v = "[v_over]"
 
     if safe_sub_path:
-        # Thêm Subtitle và SCALE một lần cuối để chốt hạ 720x1280
-        filter_parts.append(f"{last_v}ass='{safe_sub_path}',scale=720:1280,setsar=1[final_v]")
+        filter_parts.append(f"{last_v}ass='{safe_sub_path}',scale=720:1280,setsar=1,setdar=9/16[final_v]")
     else:
-        filter_parts.append(f"{last_v}scale=720:1280,setsar=1[final_v]")
+        filter_parts.append(f"{last_v}scale=720:1280,setsar=1,setdar=9/16[final_v]")
 
     cmd += ["-filter_complex", ";".join(filter_parts)]
 
-    # --- 6. XUẤT FILE (OUTPUT SETTINGS) ---
+    # --- 6. XUẤT FILE (TỐI ƯU MOBILE) ---
     cmd += [
         "-map", "[final_v]",
         "-map", f"{audio_idx}:a",
@@ -158,11 +156,10 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"✅ Render hoàn tất chuẩn 9:16: {output}")
+        print(f"✅ Render hoàn tất chuẩn 9:16 cho Telegram: {output}")
     except subprocess.CalledProcessError as e:
         print(f"❌ Lỗi FFmpeg: {e.stderr}")
     finally:
-        # Dọn dẹp
         if has_overlay and os.path.exists(overlay_path):
             os.remove(overlay_path)
         if temp_bg_file and os.path.exists(temp_bg_file):
