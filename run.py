@@ -9,10 +9,9 @@ from moviepy.editor import AudioFileClip
 # Import các modules tự xây dựng
 try:
     from topic_ai import generate_topics
-    from generate_script import generate_script, call_gemini  # Thêm call_gemini để tóm tắt
+    from generate_script import generate_script, call_gemini
     from content_ai import script_to_content
     from tts import text_to_speech
-    # Loại bỏ transcribe và subtitle cũ
     import sub_utils 
     from render import render_video
     from upload_youtube import upload_video
@@ -68,10 +67,9 @@ def process_video(topic, index):
         print(f"❌ Lỗi TTS: {e}")
         return
 
-    # --- BƯỚC 6 & 7: GENERATE TICKER (THAY THẾ TRANSCRIBE & SUBTITLE) ---
+    # --- BƯỚC 6 & 7: GENERATE TICKER ---
     print("6️⃣ & 7️⃣ Đang tóm tắt tin vắn và tạo dải chữ chạy ngang...")
     try:
-        # Prompt tóm tắt ngắn gọn để làm Ticker
         ticker_prompt = (
             f"Dựa trên kịch bản sau, hãy trích ra 7-10 tin vắn tài chính 'giật gân' cực ngắn. "
             f"Yêu cầu: \n"
@@ -81,25 +79,25 @@ def process_video(topic, index):
             f"4. Giữ đúng mã cổ phiếu (VD: SSI, HPG, VND). \n"
             f"5. Độ dài mỗi tin dưới 15 từ. \n"
             f"Kịch bản: {script}"
-       )
+        )
         
-        # Gọi AI tóm tắt từ script gốc
+        # Gọi AI tóm tắt
         summary_text = call_gemini(ticker_prompt) 
         
-        # Tạo file ASS chạy ngang (Ticker)
+        # Tạo file ASS chạy ngang
         ass_file = sub_utils.create_ticker_sub(summary_text, duration)
     except Exception as e:
         print(f"⚠️ Lỗi tạo Ticker: {e}")
         ass_file = None
 
     # --- BƯỚC 8: RENDER VIDEO ---
-    print("8️⃣ Render video")
+    print("8️⃣ Render video chuẩn 9:16")
     output = f"output_{index}.mp4"
     
     try:
         render_video(
             audio_path=audio,
-            subtitles=ass_file,  # Truyền file ticker .ass vào
+            subtitles=ass_file,
             output=output,
             topic=topic,
             market_data=market_data,
