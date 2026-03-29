@@ -1,7 +1,8 @@
 import subprocess
 import os
 import random
-from moviepy.editor import AudioFileClip
+import glob
+from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
 from PIL import Image
 
 try:
@@ -9,8 +10,55 @@ try:
 except ImportError:
     def draw_overlay(data): return None
 
+def create_random_slideshow(folder_path, target_duration):
+    """Tạo video nền từ ảnh ngẫu nhiên với hiệu ứng chuyển cảnh mờ dần"""
+    print(f"🖼️ Đang tạo slideshow từ: {folder_path}")
+    search_path = os.path.join(folder_path, "*.jpg")
+    all_images = glob.glob(search_path)
+    
+    if not all_images:
+        print("⚠️ Không tìm thấy ảnh trong asset/picture! Sử dụng nền đen.")
+        return None
+
+    random.shuffle(all_images)
+    
+    clips = []
+    current_total_dur = 0
+    img_display_dur = 4  # Mỗi ảnh hiện 4 giây
+    transition_dur = 1   # Chuyển cảnh mờ dần trong 1 giây
+
+    for img_p in all_images:
+        try:
+            # Load ảnh, resize ép về chiều cao 1280 (9:16)
+            clip = ImageClip(img_p).set_duration(img_display_dur).resize(height=1280)
+            # Căn giữa và cắt đúng khung 720x1280
+            clip = clip.set_position("center").canvas_size((720, 1280))
+            # Hiệu ứng mờ dần
+            clip = clip.crossfadein(transition_dur).crossfadeout(transition_dur)
+            
+            clips.append(clip)
+            current_total_dur += (img_display_dur - transition_dur)
+            
+            if current_total_dur >= target_duration:
+                break
+        except Exception as e:
+            print(f"❌ Lỗi xử lý ảnh {img_p}: {e}")
+            continue
+
+    if not clips:
+        return None
+
+    # Ghép các clip ảnh (method="compose" để giữ hiệu ứng crossfade)
+    final_video = concatenate_videoclips(clips, method="compose")
+    temp_bg_name = f"temp_bg_{random.randint(100,999)}.mp4"
+    
+    # Xuất file nền tạm thời (tắt audio, tắt logger để sạch log)
+    final_video.write_videofile(temp_bg_name, fps=30, codec="libx264", audio=False, logger=None)
+    return temp_bg_name
+
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
-    print(f"🎬 Đang render video chuẩn 9:16: {output}...")
+    print(f"🎬 Bắt đầu Render hệ thống (9:16): {output}...")
+    temp_bg_file = None
 
     # --- 1. LẤY THỜI LƯỢNG AUDIO ---
     audio = AudioFileClip(audio_path)
@@ -30,43 +78,46 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
             print(f"⚠️ Lỗi vẽ overlay: {e}")
 
     # --- 3. CHUẨN HÓA ĐƯỜNG DẪN SUBTITLE ---
-    # Cần thiết để FFmpeg trên Windows không bị lỗi đọc đường dẫn
     safe_sub_path = subtitles.replace("\\", "/").replace(":", "\\:") if subtitles else None
 
     # --- 4. CẤU HÌNH INPUTS ---
     cmd = ["ffmpeg", "-y"]
 
-    # Input 0: Background
-    if os.path.exists("background.mp4"):
+    # Ưu tiên tạo Slideshow từ ảnh
+    picture_folder = "asset/picture"
+    if os.path.exists(picture_folder):
+        temp_bg_file = create_random_slideshow(picture_folder, duration)
+
+    if temp_bg_file:
+        cmd += ["-i", temp_bg_file]
+    elif os.path.exists("background.mp4"):
         start_time = random.uniform(0, 5)
         cmd += ["-ss", str(start_time), "-stream_loop", "-1", "-i", "background.mp4"]
     else:
-        cmd += ["-f", "lavfi", "-i", "color=c=black:s=720x1280:r=30"]
+        cmd += ["-f", "lavfi", "-i", f"color=c=black:s=720x1280:r=30:d={duration}"]
 
-    # Input 1: Overlay PNG
+    # Input Overlay PNG
     if has_overlay:
         cmd += ["-loop", "1", "-t", str(duration), "-i", overlay_path]
 
-    # Input 2: Audio (Tiếng MC đọc)
+    # Input Audio
     cmd += ["-i", audio_path]
     
-    # Chỉ số map audio
     audio_idx = 2 if has_overlay else 1
 
     # --- 5. FILTER COMPLEX (ÉP CHUẨN 9:16 VÀ CHỒNG LỚP) ---
     filter_parts = []
     
-    # BƯỚC A: Ép Background về 720x1280. 
-    # Thêm setsar=1 để reset tỷ lệ điểm ảnh, tránh bị kéo giãn video
+    # Ép background về chuẩn 9:16, khóa SAR để không méo hình
     filter_parts.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1[bg]")
     last_v = "[bg]"
 
-    # BƯỚC B: Chèn Overlay PNG lên trên Background
+    # Đè Overlay PNG
     if has_overlay:
         filter_parts.append(f"{last_v}[1:v]overlay=0:0:shortest=1[v_over]")
         last_v = "[v_over]"
 
-    # BƯỚC C: Chèn Ticker chạy ngang lên trên cùng
+    # Đè Ticker chạy ngang ở tâm
     if safe_sub_path:
         filter_parts.append(f"{last_v}ass='{safe_sub_path}'[final_v]")
     else:
@@ -76,28 +127,29 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
 
     # --- 6. XUẤT FILE (OUTPUT SETTINGS) ---
     cmd += [
-        "-map", "[final_v]",           # Lấy luồng hình ảnh đã mix
-        "-map", f"{audio_idx}:a",      # Lấy luồng âm thanh
-        "-t", str(duration),           # Độ dài bằng audio
-        "-c:v", "libx264",             # Nén H.264
-        "-preset", "ultrafast",        # Tốc độ render cực nhanh
-        "-crf", "23",                  # Chất lượng tốt
-        "-aspect", "9:16",             # <--- BẮT BUỘC: Ép siêu dữ liệu (Metadata) là 9:16
-        "-pix_fmt", "yuv420p",         # Không bị lỗi màu trên điện thoại
-        "-c:a", "aac", "-b:a", "128k", # Nén âm thanh
-        "-movflags", "+faststart",     # Tối ưu upload web
+        "-map", "[final_v]",
+        "-map", f"{audio_idx}:a",
+        "-t", str(duration),
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "21",          # Tăng chất lượng ảnh một chút vì là slideshow
+        "-aspect", "9:16",     # Khóa cứng tỷ lệ 9:16 ở Metadata
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k",
+        "-movflags", "+faststart",
         output
     ]
 
-    # --- 7. THỰC THI LỆNH FFMPEG ---
+    # --- 7. THỰC THI ---
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"✅ Đã xuất video 9:16 thành công: {output}")
+        print(f"✅ Render hoàn tất: {output}")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Lỗi Render FFmpeg: {e.stderr}")
+        print(f"❌ Lỗi FFmpeg: {e.stderr}")
     finally:
-        # Dọn dẹp file ảnh tạm
-        if os.path.exists(overlay_path):
-            os.remove(overlay_path)
+        # Dọn dẹp file tạm để giải phóng ổ cứng
+        for f in [overlay_path, temp_bg_file]:
+            if f and os.path.exists(f):
+                os.remove(f)
 
     return output
