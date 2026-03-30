@@ -83,7 +83,7 @@ def draw_overlay(data, size=(720, 1280)):
     y = 150
 
     # --- TOP GAINERS ---
-    draw.text((50, y), "▲ TOP GAINERS", font=f_section, fill=C_UP)
+    draw.text((50, y), "▲ TOP TĂNG", font=f_section, fill=C_UP)
     y += 70
 
     # Header cột (Thêm nhãn rõ ràng hơn)
@@ -101,7 +101,7 @@ def draw_overlay(data, size=(720, 1280)):
 
     # --- PHẦN LOSERS ---
     y += 150 # Khoảng cách giữa 2 bảng
-    draw.text((50, y), "▼ TOP LOSERS", font=f_section, fill=C_DOWN)
+    draw.text((50, y), "▼ TOP GIẢM", font=f_section, fill=C_DOWN)
     y += 70
     
     for s, v in data.get("losers", [])[:8]:
