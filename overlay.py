@@ -6,14 +6,14 @@ import platform
 
 # Palette Bloomberg
 C_ACCENT = (255, 153, 0)
-C_BG_BOX = (10, 10, 10, 180)  # Nền mờ cho khu vực dữ liệu
-C_TICKER_BG = (0, 0, 0, 220)   # Nền đậm hơn cho dòng chữ chạy
+C_BG_BOX = (10, 10, 10, 180)  # Lớp nền mờ nhẹ cho Market Data
+C_TICKER_BG = (0, 0, 0, 220)   # Nền đậm cho dòng Ticker chạy
 C_UP = (0, 255, 150)
 C_DOWN = (255, 60, 60)
 C_WHITE = (255, 255, 255, 255)
 C_SUB = (170, 170, 170, 255)
 
-# Cấu hình cột (X)
+# Cấu hình tọa độ cột (X)
 COL_X = {"SYM": 45, "PRICE": 240, "PCT": 430, "VOL": 680}
 
 def load_font(size, bold=False):
@@ -26,7 +26,7 @@ def load_font(size, bold=False):
 def format_vol(v):
     if v >= 1e6: return f"{v/1e6:.1f}M"
     if v >= 1e3: return f"{v/1e3:.0f}K"
-    return f"{v:,.0f}" # Thêm phân cách hàng nghìn cho số nhỏ
+    return f"{v:,.0f}"
 
 def draw_overlay(data, size=(720, 1280)):
     img = Image.new("RGBA", size, (0, 0, 0, 0))
@@ -38,56 +38,46 @@ def draw_overlay(data, size=(720, 1280)):
     f_s = load_font(22)
     f_title = load_font(32, True)
 
-    # --- 1. HEADER (Cố định) ---
+    # --- 1. HEADER ---
     draw.rectangle((0, 0, 720, 110), fill=C_ACCENT)
     draw.text((30, 15), "BẢN TIN TÀI CHÍNH 247", font=f_h, fill="black")
     vn_t = datetime.now(pytz.timezone('Asia/Ho_Chi_Minh')).strftime("%H:%M | %d/%m/%Y")
     draw.text((30, 70), vn_t, font=f_s, fill=(40, 40, 40))
 
-    # --- 2. SUB HEADER (TICKER BG - Sát dưới Header) ---
-    # Khu vực này dành cho hiệu ứng chữ chạy trong FFmpeg/MoviePy
+    # --- 2. SUB HEADER (TICKER BG - Sát chân Header) ---
     draw.rectangle((0, 110, 720, 165), fill=C_TICKER_BG)
 
-    # --- 3. MAIN DATA BOX (Lớp nền mờ nhẹ bao phủ dữ liệu) ---
-    # Tạo một khung bo góc mờ để Market Data hiện rõ trên nền ảnh slideshow
+    # --- 3. MAIN CONTENT BOX (Nền mờ phủ toàn bộ dữ liệu) ---
     draw.rounded_rectangle((25, 175, 695, 1185), radius=15, fill=C_BG_BOX)
 
     gainers = data.get("gainers", [])
     losers = data.get("losers", [])
     
-    # Tọa độ bắt đầu vẽ chữ
     start_y = 200
     row_h = 52 
     
-    # --- VẼ TOP TĂNG ---
+    # --- TOP TĂNG ---
     if gainers:
         draw.text((45, start_y), "▲ TOP CỔ PHIẾU TĂNG TRƯỞNG", font=f_title, fill=C_UP)
         start_y += 55
-        # Header cột
         for k, x in [("MÃ", COL_X["SYM"]), ("GIÁ", COL_X["PRICE"]), ("%", COL_X["PCT"]), ("VOL", COL_X["VOL"]-50)]:
             draw.text((x, start_y), k, font=f_s, fill=C_SUB)
         start_y += 35
         
         for item in gainers:
-            # Mã CP
             draw.text((COL_X["SYM"], start_y), item['symbol'], font=f_b, fill=C_WHITE)
-            # Giá (Đã thêm phân cách hàng nghìn)
-            price_txt = f"{item['price']:,}"
-            draw.text((COL_X["PRICE"], start_y), price_txt, font=f_b, fill=C_WHITE)
-            # % Tăng
+            # Phân cách hàng nghìn cho Giá
+            p_txt = f"{item['price']:,}"
+            draw.text((COL_X["PRICE"], start_y), p_txt, font=f_b, fill=C_WHITE)
             draw.text((COL_X["PCT"], start_y), f"+{item['change']}%", font=f_b, fill=C_UP)
-            # Volume
             v_txt = format_vol(item['volume'])
             draw.text((COL_X["VOL"] - draw.textlength(v_txt, f_b), start_y), v_txt, font=f_b, fill=C_WHITE)
-            
-            # Đường kẻ mờ phân dòng
             draw.line((40, start_y+40, 680, start_y+40), fill=(255,255,255,15))
             start_y += row_h
 
-    # Khoảng cách giữa 2 bảng
     start_y += 45 
 
-    # --- VẼ TOP GIẢM ---
+    # --- TOP GIẢM ---
     if losers:
         draw.text((45, start_y), "▼ TOP CỔ PHIẾU GIẢM ĐIỂM", font=f_title, fill=C_DOWN)
         start_y += 55
@@ -97,19 +87,16 @@ def draw_overlay(data, size=(720, 1280)):
         
         for item in losers:
             draw.text((COL_X["SYM"], start_y), item['symbol'], font=f_b, fill=C_WHITE)
-            # Giá (Đã thêm phân cách hàng nghìn)
-            price_txt = f"{item['price']:,}"
-            draw.text((COL_X["PRICE"], start_y), price_txt, font=f_b, fill=C_WHITE)
-            # % Giảm
+            # Phân cách hàng nghìn cho Giá
+            p_txt = f"{item['price']:,}"
+            draw.text((COL_X["PRICE"], start_y), p_txt, font=f_b, fill=C_WHITE)
             draw.text((COL_X["PCT"], start_y), f"{item['change']}%", font=f_b, fill=C_DOWN)
-            # Volume
             v_txt = format_vol(item['volume'])
             draw.text((COL_X["VOL"] - draw.textlength(v_txt, f_b), start_y), v_txt, font=f_b, fill=C_WHITE)
-            
             draw.line((40, start_y+40, 680, start_y+40), fill=(255,255,255,15))
             start_y += row_h
 
-    # --- 4. FOOTER (Cố định) ---
+    # --- 4. FOOTER ---
     draw.rectangle((0, 1200, 720, 1280), fill=(15, 15, 15, 255))
     draw.text((30, 1225), "Product by: Tâm sự 24h - Tài chính & Công nghệ", font=f_s, fill=C_SUB)
 
