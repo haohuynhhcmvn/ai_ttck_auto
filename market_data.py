@@ -1,33 +1,38 @@
 # ==============================
-# MARKET DATA PRO (CLEAN & RELIABLE)
+# MARKET DATA PRO (DYNAMIC LIMIT)
 # ==============================
 
 import yfinance as yf
 import pandas as pd
 import time
-import os
 
 # ==============================
 # DANH SÁCH MÃ VN-INDEX (HOSE/HNX)
 # ==============================
 VNINDEX_ALL = [
-    # VN30
+    # Nhóm VN30
     "ACB.VN", "BCM.VN", "BID.VN", "BVH.VN", "CTG.VN", "FPT.VN", "GAS.VN", "GVR.VN",
     "HDB.VN", "HPG.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "POW.VN", "SAB.VN",
     "SHB.VN", "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN",
     "VIB.VN", "VIC.VN", "VJC.VN", "VNM.VN", "VPB.VN", "VRE.VN",
-    # Chứng khoán & Thép & BĐS hot
-    "VND.VN", "VCI.VN", "HCM.VN", "VIX.VN", "FTS.VN", "BSI.VN",
-    "HSG.VN", "NKG.VN", "DGC.VN", "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN"
+    
+    # Nhóm Tài chính - Chứng khoán - Ngân hàng khác
+    "LPB.VN", "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN",
+    "VIX.VN", "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN",
+
+    # Nhóm Bất động sản - Xây dựng
+    "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "ITA.VN",
+    "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN", "CTD.VN",
+
+    # Nhóm Thép - Sản xuất - Năng lượng
+    "HSG.VN", "NKG.VN", "DGC.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", 
+    "PVS.VN", "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
 ]
 
-# ==============================
-# LẤY DỮ LIỆU INDEX (VN-INDEX)
-# ==============================
 def get_index_data():
     """Lấy trạng thái chung của thị trường (VN-Index)"""
     try:
-        idx = yf.Ticker("^VNINDEX.VN") # Một số API dùng mã này
+        idx = yf.Ticker("^VNINDEX.VN")
         df = idx.history(period="2d")
         if len(df) >= 2:
             last = df["Close"].iloc[-1]
@@ -45,14 +50,13 @@ def get_index_data():
     return {"point": "Đang cập nhật", "change": 0, "pct": 0, "status": "Đi ngang"}
 
 # ==============================
-# LẤY TOP TĂNG/GIẢM (OPTIMIZED BATCH)
+# LẤY TOP TĂNG/GIẢM (DYNAMIC FILTER)
 # ==============================
-def get_top_stocks(limit=5):
+def get_top_stocks(limit=12): # <-- Đã tăng lên 12
     results = []
     print(f"📊 Đang quét dữ liệu thị trường ({len(VNINDEX_ALL)} mã)...")
     
     try:
-        # Tải batch dữ liệu 2 ngày gần nhất
         raw = yf.download(
             tickers=VNINDEX_ALL,
             period="2d",
@@ -65,7 +69,6 @@ def get_top_stocks(limit=5):
 
         for s in VNINDEX_ALL:
             try:
-                # Xử lý trường hợp yf.download trả về dữ liệu rỗng hoặc lỗi mã
                 df = raw[s].dropna()
                 if len(df) < 2: continue
 
@@ -88,11 +91,17 @@ def get_top_stocks(limit=5):
     if not results: return [], []
 
     df_res = pd.DataFrame(results)
-    # Lọc bỏ các mã không có biến động (0.0) để dữ liệu AI 'đậm đà' hơn
-    df_res = df_res[df_res["change"] != 0]
     
-    gainers = df_res.sort_values("change", ascending=False).head(limit)
-    losers = df_res.sort_values("change", ascending=True).head(limit)
+    # BƯỚC LỌC THÔNG MINH (CHỐNG LỖI LOGIC)
+    # 1. Chỉ lấy những mã thực sự có % > 0 làm gainers
+    df_gainers = df_res[df_res["change"] > 0].sort_values("change", ascending=False)
+    
+    # 2. Chỉ lấy những mã thực sự có % < 0 làm losers
+    df_losers = df_res[df_res["change"] < 0].sort_values("change", ascending=True)
+
+    # Dùng .head(limit): Hàm này tự động tùy biến. Nếu df chỉ có 7 mã, nó trả về 7. Nếu có 50, nó lấy đúng 12.
+    gainers = df_gainers.head(limit)
+    losers = df_losers.head(limit)
 
     return list(zip(gainers["symbol"], gainers["change"])), \
            list(zip(losers["symbol"], losers["change"]))
@@ -101,23 +110,19 @@ def get_top_stocks(limit=5):
 # HÀM CHÍNH CHO PIPELINE
 # ==============================
 def get_market_data():
-    """
-    Kết hợp Index và Stock data để cung cấp context đầy đủ nhất cho AI.
-    """
     try:
         index_info = get_index_data()
-        gainers, losers = get_top_stocks(limit=5)
         
-        # Tạo văn bản chất lượng cho AI Scripting
-        # Ví dụ: 'SSI tăng 3.5%, HPG tăng 2.1%'
-        gain_text = ", ".join([f"{m} tăng {c}%" for m, c in gainers]) if gainers else "không có mã tăng nổi bật"
-        lose_text = ", ".join([f"{m} giảm {c}%" for m, c in losers]) if losers else "không có mã giảm sâu"
+        # Mặc định gọi giới hạn 12 mã
+        gainers, losers = get_top_stocks(limit=12) 
+        
+        gain_text = ", ".join([f"{m} tăng {c}%" for m, c in gainers]) if gainers else "không có mã tăng"
+        lose_text = ", ".join([f"{m} giảm {c}%" for m, c in losers]) if losers else "không có mã giảm"
 
-        # Tổng hợp câu thông báo thị trường chung
         market_status = f"VN-Index hiện ở mức {index_info['point']} điểm, {index_info['status']} {abs(index_info['change'])} điểm, tương đương {abs(index_info['pct'])}%."
 
         return {
-            "index_summary": market_status, # Dùng cái này cho Hook của AI
+            "index_summary": market_status,
             "gainers": gainers,
             "losers": losers,
             "gain_text": gain_text,
@@ -138,5 +143,5 @@ if __name__ == "__main__":
     data = get_market_data()
     print("--- TỔNG QUAN ---")
     print(data["index_summary"])
-    print("\n🚀 TOP TĂNG:", data["gain_text"])
-    print("📉 TOP GIẢM:", data["lose_text"])
+    print(f"\n🚀 TOP TĂNG ({len(data['gainers'])} mã):", data["gain_text"])
+    print(f"📉 TOP GIẢM ({len(data['losers'])} mã):", data["lose_text"])
