@@ -28,7 +28,7 @@ def create_ticker_sub(ticker_text, duration_seconds, filename="ticker.ass"):
     # --- 2. CẤU HÌNH VỊ TRÍ VÀ MÀU SẮC (PHẦN BẠN CẦN LƯU Ý) ---
     # MarginV tính từ cạnh dưới video (1280px) lên trên. 
     # Con số 1138 đưa tâm chữ vào vùng Y=142px (nằm giữa dải đen 110px-165px).
-    margin_v_position = 1138  # <-- TĂNG số này để đẩy chữ lên cao, GIẢM để hạ chữ xuống
+    margin_v_position = 1135  # <-- TĂNG số này để đẩy chữ lên cao, GIẢM để hạ chữ xuống
 
     # Mã màu Vàng Ánh Kim (Gold): &H0000D7FF (Định dạng màu trong ASS là &H AABBGGRR - Xanh/Lục/Đỏ)
     # PrimaryColour (&H0000D7FF): Màu vàng Gold rực rỡ
