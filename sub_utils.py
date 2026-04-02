@@ -28,7 +28,7 @@ def create_ticker_sub(ticker_text, duration_seconds, filename="ticker.ass"):
     # --- 2. CẤU HÌNH VỊ TRÍ VÀ MÀU SẮC (PHẦN BẠN CẦN LƯU Ý) ---
     # MarginV tính từ cạnh dưới video (1280px) lên trên. 
     # Con số 1138 đưa tâm chữ vào vùng Y=142px (nằm giữa dải đen 110px-165px).
-    margin_v_position = 1135  # <-- TĂNG số này để đẩy chữ lên cao, GIẢM để hạ chữ xuống
+    margin_v_position = 1130  # <-- TĂNG số này để đẩy chữ lên cao, GIẢM để hạ chữ xuống
 
     # Mã màu Vàng Ánh Kim (Gold): &H0000D7FF (Định dạng màu trong ASS là &H AABBGGRR - Xanh/Lục/Đỏ)
     # PrimaryColour (&H0000D7FF): Màu vàng Gold rực rỡ
@@ -62,7 +62,9 @@ Style: TickerStyle,DejaVu Sans,34,&H0000D7FF,&H00000000,&H00000000,&H00000000,-1
     # --- 4. HIỆU ỨNG CHỮ CHẠY (BANNER) ---
     # Banner;delay;left_to_right;fadeawaywidth
     # delay (15): Tốc độ chạy (số càng nhỏ chạy càng nhanh)
+    delay (15)
     # left_to_right (0): 1 là chạy từ Trái sang Phải, 0 là Phải sang Trái
+    left_to_right (0)
     effect = "Banner;18;1;0"
 
     # --- 5. TẠO DÒNG SỰ KIỆN (EVENT LINE) ---
