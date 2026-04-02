@@ -21,12 +21,14 @@ VNINDEX_ALL = [
     "VIX.VN", "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN",
 
     # Nhóm Bất động sản - Xây dựng
-    "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "ITA.VN",
-    "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN", "CTD.VN",
+    "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "CTD.VN",
+    "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN",
 
     # Nhóm Thép - Sản xuất - Năng lượng
     "HSG.VN", "NKG.VN", "DGC.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", 
-    "PVS.VN", "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
+    "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
+    # --- NHÓM HNX (Lưu ý PVS dùng .HN) ---
+    "PVS.HN", "CEO.HN", "SHS.HN", "MBS.HN", "IDC.HN", "VCS.HN", "NTP.HN",
 ]
 
 def get_index_data():
