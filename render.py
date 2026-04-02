@@ -1,5 +1,5 @@
 # ==============================
-# RENDER ENGINE PRO (GITHUB ACTIONS OPTIMIZED)
+# RENDER ENGINE PRO (MUSIC & GHA OPTIMIZED)
 # ==============================
 
 import subprocess
@@ -15,6 +15,19 @@ try:
     from overlay import draw_overlay
 except ImportError:
     def draw_overlay(data): return None
+
+def get_random_bg_music(music_dir="assets/music"):
+    """Quét thư mục và chọn ngẫu nhiên 1 file nhạc mp3/wav"""
+    if not os.path.exists(music_dir):
+        return None
+    valid_extensions = ('*.mp3', '*.wav', '*.m4a')
+    music_files = []
+    for ext in valid_extensions:
+        music_files.extend(glob.glob(os.path.join(music_dir, ext)))
+    
+    if not music_files:
+        return None
+    return random.choice(music_files)
 
 def create_random_slideshow(folder_path, target_duration):
     """
@@ -43,10 +56,8 @@ def create_random_slideshow(folder_path, target_duration):
     while current_total_dur < target_duration:
         img_p = selected_images[i % len(selected_images)]
         try:
-            # Resize ngay lập tức bằng PIL trước khi đưa vào MoviePy để tiết kiệm RAM
             with Image.open(img_p) as img:
                 img = img.convert("RGB")
-                # Resize chuẩn 720x1280 (Crop Center)
                 w, h = img.size
                 aspect_target = 720/1280
                 aspect_img = w/h
@@ -62,8 +73,7 @@ def create_random_slideshow(folder_path, target_duration):
                     top = (new_h - 1280) / 2
                     img = img.crop((0, top, 720, top + 1280))
                 
-                # Lưu tạm ảnh đã resize để ImageClip load nhẹ hơn
-                temp_img_path = f"temp_img_{i}.jpg"
+                temp_img_path = f"temp_img_{uuid.uuid4().hex[:5]}.jpg"
                 img.save(temp_img_path, quality=85)
 
             clip = ImageClip(temp_img_path).set_duration(img_display_dur).set_fps(24)
@@ -72,7 +82,7 @@ def create_random_slideshow(folder_path, target_duration):
             
             current_total_dur += (img_display_dur - transition_dur)
             i += 1
-            if i > 50: break # Giới hạn số lượng clip gộp
+            if i > 50: break 
             
         except Exception as e:
             print(f"❌ Lỗi ảnh: {e}")
@@ -86,7 +96,6 @@ def create_random_slideshow(folder_path, target_duration):
     
     temp_bg_name = f"bg_{uuid.uuid4().hex[:5]}.mp4"
     
-    # Xuất file nền cực nhanh (ultrafast) để FFmpeg tổng hợp lại sau
     final_video.write_videofile(
         temp_bg_name, 
         fps=24, 
@@ -94,30 +103,33 @@ def create_random_slideshow(folder_path, target_duration):
         audio=False, 
         logger=None,
         preset="ultrafast",
-        threads=2 # Giới hạn thread để ổn định RAM trên GHA
+        threads=2 
     )
     
-    # Dọn dẹp ảnh tạm
-    for f in glob.glob("temp_img_*.jpg"): os.remove(f)
+    for f in glob.glob("temp_img_*.jpg"): 
+        try: os.remove(f)
+        except: pass
     
     return temp_bg_name
 
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None):
     """
-    Hàm Render chính - Kết hợp Background, Overlay, Subtitle và Audio.
-    Tối ưu Filter Complex để FFmpeg xử lý trong 1 luồng duy nhất.
+    Hàm Render chính - Tích hợp Nhạc nền Random và Audio Mixing chuyên nghiệp.
     """
     print(f"🎬 [RENDER]: Pipeline 9:16 đang chạy...")
     temp_bg_file = None
     overlay_path = f"ovl_{uuid.uuid4().hex[:5]}.png"
     has_overlay = False
 
-    # 1. Lấy thông tin Audio
-    audio_clip = AudioFileClip(audio_path)
-    duration = audio_clip.duration
-    audio_clip.close()
+    # 1. Lấy thông tin Audio MC (Giọng đọc)
+    voice_clip = AudioFileClip(audio_path)
+    duration = voice_clip.duration
+    voice_clip.close()
 
-    # 2. Tạo Overlay (Biểu đồ/Tin tức)
+    # 2. Chọn nhạc nền ngẫu nhiên
+    bg_music_file = get_random_bg_music("assets/music")
+
+    # 3. Tạo Overlay (Biểu đồ/Tin tức)
     if market_data:
         try:
             img_array = draw_overlay(market_data)
@@ -127,35 +139,37 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
                 has_overlay = True
         except: print("⚠️ [SKIP]: Overlay không khả dụng")
 
-    # 3. Chuẩn hóa đường dẫn Subtitle (Fix lỗi path trên Linux)
+    # 4. Chuẩn hóa đường dẫn Subtitle
     safe_sub_path = subtitles.replace("\\", "/").replace(":", "\\:") if subtitles else None
 
-    # 4. Cấu hình FFmpeg
+    # 5. Tạo Slideshow Background
     picture_folder = "assets/picture"
     if os.path.exists(picture_folder):
         temp_bg_file = create_random_slideshow(picture_folder, duration)
 
+    # --- KHỞI TẠO LỆNH FFMPEG ---
     cmd = ["ffmpeg", "-y"]
     
-    # Input 0: Background
+    # Input 0: Video Background
     if temp_bg_file:
         cmd += ["-i", temp_bg_file]
-    elif os.path.exists("background.mp4"):
-        cmd += ["-stream_loop", "-1", "-i", "background.mp4"]
     else:
         cmd += ["-f", "lavfi", "-i", f"color=c=black:s=720x1280:r=24:d={duration}"]
 
-    # Input 1: Overlay (nếu có)
+    # Input 1: Overlay (PNG)
     if has_overlay:
         cmd += ["-loop", "1", "-t", str(duration), "-i", overlay_path]
 
-    # Input cuối: Audio
+    # Input 2: Giọng đọc (MC Voice)
     cmd += ["-i", audio_path]
-    audio_idx = 2 if has_overlay else 1
 
-    # 5. Filter Complex (Tối ưu hóa màu sắc & độ nét)
+    # Input 3: Nhạc nền (Background Music) - Tự động Loop
+    if bg_music_file:
+        cmd += ["-stream_loop", "-1", "-i", bg_music_file]
+
+    # --- FILTER COMPLEX ---
     filters = []
-    # Xử lý Background: Thêm chút bão hòa màu (saturation) cho video TikTok bắt mắt
+    # Xử lý hình ảnh
     filters.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,eq=saturation=1.2:contrast=1.1[bg]")
     last_v = "[bg]"
 
@@ -163,36 +177,42 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         filters.append(f"[1:v]scale=720:1280[ovl];{last_v}[ovl]overlay=0:0:shortest=1[v_over]")
         last_v = "[v_over]"
 
-    # Chèn Subtitle (ASS) - Sử dụng 'fix_sub_duration' để tránh nhấp nháy
     if safe_sub_path:
         filters.append(f"{last_v}ass='{safe_sub_path}'[final_v]")
     else:
         filters.append(f"{last_v}copy[final_v]")
 
+    # Xử lý âm thanh (Mixing)
+    # [2:a] là giọng MC, [3:a] là nhạc nền
+    if bg_music_file:
+        # Giảm âm lượng nhạc nền xuống 0.08 (8%) và trộn với giọng MC
+        filters.append(f"[3:a]volume=0.08,atrim=0:{duration},afade=t=out:st={duration-2}:d=2[bg_a]")
+        filters.append(f"[2:a][bg_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]")
+    else:
+        filters.append("[2:a]copy[final_a]")
+
     cmd += ["-filter_complex", ";".join(filters)]
 
-    # 6. Xuất bản (Cấu hình Mobile-Friendly)
+    # --- OUTPUT SETTINGS ---
     cmd += [
         "-map", "[final_v]",
-        "-map", f"{audio_idx}:a",
+        "-map", "[final_a]",
         "-c:v", "libx264",
-        "-preset", "slow",     # Chậm hơn nhưng nén cực tốt cho Telegram/TikTok
-        "-crf", "22",          # Độ nét cao (CRF 18-24 là dải tốt nhất)
+        "-preset", "slow",
+        "-crf", "22",
         "-c:a", "aac", "-b:a", "128k",
-        "-pix_fmt", "yuv420p", # Bắt buộc để chạy được trên mọi điện thoại
-        "-movflags", "+faststart", # Cho phép video phát ngay khi đang tải (Streaming)
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
         output
     ]
 
     try:
-        # Chạy FFmpeg và bắt lỗi chi tiết
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"✅ [SUCCESS]: Video hoàn tất -> {output}")
+            print(f"✅ [SUCCESS]: Video hoàn tất với nhạc nền -> {output}")
         else:
             print(f"❌ [FFMPEG ERROR]: {result.stderr}")
     finally:
-        # Dọn dẹp tài nguyên
         if has_overlay and os.path.exists(overlay_path): os.remove(overlay_path)
         if temp_bg_file and os.path.exists(temp_bg_file): os.remove(temp_bg_file)
 
