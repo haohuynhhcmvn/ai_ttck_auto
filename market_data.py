@@ -19,20 +19,19 @@ VNINDEX_ALL = [
 
     # --- NHÓM TÀI CHÍNH - NGÂN HÀNG - CHỨNG KHOÁN MỞ RỘNG ---
     "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN", "VIX.VN", 
-    "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN", "TCBS.VN", "MBS.VN",
+    "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN",
 
     # --- NHÓM BẤT ĐỘNG SẢN - XÂY DỰNG - KHU CÔNG NGHIỆP ---
     "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "CTD.VN",
     "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN",
-    "BCM.VN", "IDC.VN",
+    "BCM.VN",
 
     # --- NHÓM THÉP - SẢN XUẤT - NĂNG LƯỢNG ---
     "HSG.VN", "NKG.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", "REE.VN", 
     "HDG.VN", "NT2.VN", "POW.VN", "HVN.VN",
 
     # --- NHÓM CÔNG NGHỆ - BÁN LẺ - TIÊU DÙNG & CỔ PHIẾU CÓ VỐN HÓA LỚN ---
-    "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN", "MCH.VN", "CTR.VN", "VGI.VN",
-    "ACV.VN", "BSR.VN"
+    "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN", "MCH.VN", "CTR.VN", "BSR.VN"
 ]
 def get_market_data():
     try:
