@@ -33,10 +33,10 @@ def draw_overlay(data, size=(720, 1280)):
     draw = ImageDraw.Draw(img)
     
     # Khởi tạo font
-    f_h = load_font(42, True)
-    f_b = load_font(22, True)
-    f_s = load_font(18)
-    f_title = load_font(32, True)
+    f_h = load_font(40, True)
+    f_b = load_font(20, True)
+    f_s = load_font(16)
+    f_title = load_font(30, True)
 
     # --- 1. HEADER ---
     draw.rectangle((0, 0, 720, 110), fill=C_ACCENT)
@@ -59,10 +59,10 @@ def draw_overlay(data, size=(720, 1280)):
     # --- TOP TĂNG ---
     if gainers:
         draw.text((45, start_y), "▲ TOP CỔ PHIẾU TĂNG TRƯỞNG", font=f_title, fill=C_UP)
-        start_y += 55
+        start_y += 30
         for k, x in [("MÃ", COL_X["SYM"]), ("GIÁ", COL_X["PRICE"]), ("%", COL_X["PCT"]), ("VOL", COL_X["VOL"]-50)]:
             draw.text((x, start_y), k, font=f_s, fill=C_SUB)
-        start_y += 35
+        start_y += 30
         
         for item in gainers:
             draw.text((COL_X["SYM"], start_y), item['symbol'], font=f_b, fill=C_WHITE)
@@ -75,15 +75,15 @@ def draw_overlay(data, size=(720, 1280)):
             draw.line((40, start_y+40, 680, start_y+40), fill=(255,255,255,15))
             start_y += row_h
 
-    start_y += 40 
+    start_y += 30 
 
     # --- TOP GIẢM ---
     if losers:
         draw.text((45, start_y), "▼ TOP CỔ PHIẾU GIẢM ĐIỂM", font=f_title, fill=C_DOWN)
-        start_y += 55
+        start_y += 30
         for k, x in [("MÃ", COL_X["SYM"]), ("GIÁ", COL_X["PRICE"]), ("%", COL_X["PCT"]), ("VOL", COL_X["VOL"]-50)]:
             draw.text((x, start_y), k, font=f_s, fill=C_SUB)
-        start_y += 35
+        start_y += 30
         
         for item in losers:
             draw.text((COL_X["SYM"], start_y), item['symbol'], font=f_b, fill=C_WHITE)
