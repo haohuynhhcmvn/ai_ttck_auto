@@ -9,8 +9,9 @@ import time
 # ==============================
 # DANH SÁCH MÃ VN-INDEX (HOSE/HNX)
 # ==============================
+# Danh sách mã chứng khoán cập nhật mới nhất cho Yahoo Finance
 VNINDEX_ALL = [
-    # --- NHÓM VN30 (Cập nhật kỳ Q1/2026) ---
+    # --- NHÓM VN30 (Cập nhật kỳ cơ cấu Q1/2026) ---
     "ACB.VN", "BID.VN", "CTG.VN", "DGC.VN", "FPT.VN", "GAS.VN", "GVR.VN", "HDB.VN", 
     "HPG.VN", "LPB.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "SAB.VN", "SHB.VN", 
     "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN", "VIB.VN", 
@@ -23,15 +24,15 @@ VNINDEX_ALL = [
     # --- NHÓM BẤT ĐỘNG SẢN - XÂY DỰNG - KHU CÔNG NGHIỆP ---
     "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "CTD.VN",
     "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN",
-    "BCM.VN", "IDC.VN", # BCM chuyển xuống đây, thêm IDC cực kỳ mạnh
+    "BCM.VN", "IDC.VN",
 
-    # --- NHÓM CÔNG NGHIỆP - NĂNG LƯỢNG - HÀNG KHÔNG ---
+    # --- NHÓM THÉP - SẢN XUẤT - NĂNG LƯỢNG ---
     "HSG.VN", "NKG.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", "REE.VN", 
-    "HDG.VN", "NT2.VN", "POW.VN", "HVN.VN", # POW chuyển xuống, thêm HVN (Vietnam Airlines)
+    "HDG.VN", "NT2.VN", "POW.VN", "HVN.VN",
 
-    # --- NHÓM CÔNG NGHỆ - BÁN LẺ - TIÊU DÙNG (Cực quan trọng) ---
+    # --- NHÓM CÔNG NGHỆ - BÁN LẺ - TIÊU DÙNG & CỔ PHIẾU CÓ VỐN HÓA LỚN ---
     "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN", "MCH.VN", "CTR.VN", "VGI.VN",
-    "MSB.VN", "ACV.VN", "BSR.VN" # Thêm MCH, CTR, ACV, BSR là các mã thanh khoản tỷ đô
+    "ACV.VN", "BSR.VN"
 ]
 def get_market_data():
     try:
