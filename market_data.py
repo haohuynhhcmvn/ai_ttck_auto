@@ -1,160 +1,142 @@
 # ==============================
-# MARKET DATA (FAST BATCH PROCESSING)
+# MARKET DATA PRO (CLEAN & RELIABLE)
 # ==============================
 
 import yfinance as yf
 import pandas as pd
 import time
+import os
 
 # ==============================
-# DANH SÁCH MÃ VN-INDEX (HOSE)
+# DANH SÁCH MÃ VN-INDEX (HOSE/HNX)
 # ==============================
 VNINDEX_ALL = [
-    # Nhóm VN30
+    # VN30
     "ACB.VN", "BCM.VN", "BID.VN", "BVH.VN", "CTG.VN", "FPT.VN", "GAS.VN", "GVR.VN",
     "HDB.VN", "HPG.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "POW.VN", "SAB.VN",
     "SHB.VN", "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN",
     "VIB.VN", "VIC.VN", "VJC.VN", "VNM.VN", "VPB.VN", "VRE.VN",
-
-    # Nhóm Tài chính - Chứng khoán - Ngân hàng khác
-    "LPB.VN", "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN",
-    "VIX.VN", "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN",
-
-    # Nhóm Bất động sản - Xây dựng
-    "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "ITA.VN",
-    "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN", "CTD.VN",
-
-    # Nhóm Thép - Sản xuất - Năng lượng
-    "HSG.VN", "NKG.VN", "DGC.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", 
-    "PVS.VN", "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
+    # Chứng khoán & Thép & BĐS hot
+    "VND.VN", "VCI.VN", "HCM.VN", "VIX.VN", "FTS.VN", "BSI.VN",
+    "HSG.VN", "NKG.VN", "DGC.VN", "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN"
 ]
 
 # ==============================
-# SAFE DOWNLOAD (CHO TỪNG MÃ RIÊNG LẺ)
+# LẤY DỮ LIỆU INDEX (VN-INDEX)
 # ==============================
-def safe_download(ticker):
-    """Fallback nếu tải batch bị lỗi"""
+def get_index_data():
+    """Lấy trạng thái chung của thị trường (VN-Index)"""
     try:
-        t = yf.Ticker(ticker)
-        df = t.history(period="3d") # Lấy 3 ngày để chắc chắn có đủ dữ liệu so sánh
-        if df is None or len(df) < 2:
-            return None
-        return df
-    except:
-        return None
+        idx = yf.Ticker("^VNINDEX.VN") # Một số API dùng mã này
+        df = idx.history(period="2d")
+        if len(df) >= 2:
+            last = df["Close"].iloc[-1]
+            prev = df["Close"].iloc[-2]
+            change = last - prev
+            pct = (change / prev) * 100
+            status = "TĂNG" if change > 0 else "GIẢM"
+            return {
+                "point": round(last, 2),
+                "change": round(change, 2),
+                "pct": round(pct, 2),
+                "status": status
+            }
+    except: pass
+    return {"point": "Đang cập nhật", "change": 0, "pct": 0, "status": "Đi ngang"}
 
 # ==============================
-# LẤY TOP TĂNG/GIẢM (TỐI ƯU TỐC ĐỘ)
+# LẤY TOP TĂNG/GIẢM (OPTIMIZED BATCH)
 # ==============================
 def get_top_stocks(limit=5):
     results = []
-    
-    print(f"📊 Đang tải dữ liệu {len(VNINDEX_ALL)} mã cổ phiếu...")
+    print(f"📊 Đang quét dữ liệu thị trường ({len(VNINDEX_ALL)} mã)...")
     
     try:
-        # Tải toàn bộ danh sách trong 1 request (Batch)
+        # Tải batch dữ liệu 2 ngày gần nhất
         raw = yf.download(
             tickers=VNINDEX_ALL,
-            period="3d",
+            period="2d",
             group_by="ticker",
             auto_adjust=True,
             threads=True,
-            progress=False
+            progress=False,
+            timeout=30
         )
 
         for s in VNINDEX_ALL:
             try:
-                # Xử lý dữ liệu từ MultiIndex DataFrame
+                # Xử lý trường hợp yf.download trả về dữ liệu rỗng hoặc lỗi mã
                 df = raw[s].dropna()
-                
-                if len(df) < 2:
-                    continue
+                if len(df) < 2: continue
 
-                last_price = df["Close"].iloc[-1]
-                prev_price = df["Close"].iloc[-2]
-
-                if prev_price == 0: continue
+                last_p = df["Close"].iloc[-1]
+                prev_p = df["Close"].iloc[-2]
                 
-                pct_change = (last_price - prev_price) / prev_price * 100
+                if prev_p == 0: continue
+                pct = ((last_p - prev_p) / prev_p) * 100
 
                 results.append({
                     "symbol": s.replace(".VN", ""),
-                    "change": round(pct_change, 2),
-                    "price": round(last_price, 2)
+                    "change": round(pct, 2),
+                    "price": round(last_p, 2)
                 })
-            except:
-                continue
+            except: continue
 
     except Exception as e:
-        print(f"⚠️ Batch download gặp sự cố: {e}. Đang chuyển sang chế độ tải từng mã...")
+        print(f"⚠️ Lỗi tải Batch: {e}")
 
-    # --- FALLBACK: Nếu batch download không có kết quả ---
-    if not results:
-        for s in VNINDEX_ALL:
-            df = safe_download(s)
-            if df is not None:
-                try:
-                    last_price = df["Close"].iloc[-1]
-                    prev_price = df["Close"].iloc[-2]
-                    pct_change = (last_price - prev_price) / prev_price * 100
-                    results.append({
-                        "symbol": s.replace(".VN", ""),
-                        "change": round(pct_change, 2),
-                        "price": round(last_price, 2)
-                    })
-                except: continue
-            time.sleep(0.01)
+    if not results: return [], []
 
-    if not results:
-        return [], []
-
-    # Chuyển thành DataFrame để sắp xếp
     df_res = pd.DataFrame(results)
+    # Lọc bỏ các mã không có biến động (0.0) để dữ liệu AI 'đậm đà' hơn
+    df_res = df_res[df_res["change"] != 0]
     
-    # Lấy Top tăng và Top giảm
     gainers = df_res.sort_values("change", ascending=False).head(limit)
     losers = df_res.sort_values("change", ascending=True).head(limit)
 
-    # Convert sang format list tuple cho dễ đọc: [('Mã', %_tăng), ...]
-    gainers_list = list(zip(gainers["symbol"], gainers["change"]))
-    losers_list = list(zip(losers["symbol"], losers["change"]))
-
-    return gainers_list, losers_list
+    return list(zip(gainers["symbol"], gainers["change"])), \
+           list(zip(losers["symbol"], losers["change"]))
 
 # ==============================
-# HÀM CHÍNH ĐỂ PIPELINE GỌI
+# HÀM CHÍNH CHO PIPELINE
 # ==============================
 def get_market_data():
     """
-    Trả về dictionary chứa dữ liệu thị trường.
-    Cấu trúc được giữ nguyên để không làm crash các bước sau trong pipeline.
+    Kết hợp Index và Stock data để cung cấp context đầy đủ nhất cho AI.
     """
     try:
+        index_info = get_index_data()
         gainers, losers = get_top_stocks(limit=5)
         
-        # Format lại chuỗi văn bản để AI dễ đọc
-        gain_text = ", ".join([f"{m} tăng {c}%" for m, c in gainers])
-        lose_text = ", ".join([f"{m} giảm {c}%" for m, c in losers])
+        # Tạo văn bản chất lượng cho AI Scripting
+        # Ví dụ: 'SSI tăng 3.5%, HPG tăng 2.1%'
+        gain_text = ", ".join([f"{m} tăng {c}%" for m, c in gainers]) if gainers else "không có mã tăng nổi bật"
+        lose_text = ", ".join([f"{m} giảm {c}%" for m, c in losers]) if losers else "không có mã giảm sâu"
+
+        # Tổng hợp câu thông báo thị trường chung
+        market_status = f"VN-Index hiện ở mức {index_info['point']} điểm, {index_info['status']} {abs(index_info['change'])} điểm, tương đương {abs(index_info['pct'])}%."
 
         return {
-            "vnindex": {},           # Chỗ trống cho dữ liệu Index nếu cần sau này
-            "gainers": gainers,      # Dạng list tuple để render video
-            "losers": losers,        # Dạng list tuple để render video
-            "gain_text": gain_text,  # Dạng chuỗi để AI viết script
-            "lose_text": lose_text   # Dạng chuỗi để AI viết script
+            "index_summary": market_status, # Dùng cái này cho Hook của AI
+            "gainers": gainers,
+            "losers": losers,
+            "gain_text": gain_text,
+            "lose_text": lose_text,
+            "raw_index": index_info
         }
     except Exception as e:
-        print(f"❌ Lỗi nghiêm trọng tại market_data: {e}")
+        print(f"❌ Market Data sập: {e}")
         return {
-            "vnindex": {},
-            "gainers": [],
-            "losers": [],
-            "gain_text": "Không có dữ liệu",
-            "lose_text": "Không có dữ liệu"
+            "index_summary": "Thị trường đang có những diễn biến mới.",
+            "gainers": [], "losers": [],
+            "gain_text": "đang cập nhật", "lose_text": "đang cập nhật",
+            "raw_index": {}
         }
 
 # --- TEST ---
 if __name__ == "__main__":
     data = get_market_data()
-    print("Top tăng:", data["gain_text"])
-    print("Top giảm:", data["lose_text"])
+    print("--- TỔNG QUAN ---")
+    print(data["index_summary"])
+    print("\n🚀 TOP TĂNG:", data["gain_text"])
+    print("📉 TOP GIẢM:", data["lose_text"])
