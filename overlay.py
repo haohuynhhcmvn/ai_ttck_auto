@@ -34,8 +34,8 @@ def draw_overlay(data, size=(720, 1280)):
     
     # Khởi tạo font
     f_h = load_font(42, True)
-    f_b = load_font(28, True)
-    f_s = load_font(22)
+    f_b = load_font(22, True)
+    f_s = load_font(18)
     f_title = load_font(32, True)
 
     # --- 1. HEADER ---
@@ -54,7 +54,7 @@ def draw_overlay(data, size=(720, 1280)):
     losers = data.get("losers", [])
     
     start_y = 200
-    row_h = 52 
+    row_h = 40 
     
     # --- TOP TĂNG ---
     if gainers:
