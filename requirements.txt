@@ -1,16 +1,21 @@
+# --- Xử lý đồ họa & Video (Trọng tâm) ---
 moviepy==1.0.3
-imageio
-imageio-ffmpeg
-numpy
-edge-tts
-openai-whisper
-requests
-google-api-python-client
-google-auth-oauthlib
-google-auth-httplib2
 Pillow==9.5.0
+numpy
+
+# --- Dữ liệu tài chính (Nguồn tin) ---
 vnstock
 yfinance
 pandas
+
+# --- Âm thanh & Ngôn ngữ (MC ảo) ---
+edge-tts
 num2words
+
+# --- Tiện ích & Kết nối ---
+requests
 pytz
+
+# --- Tự động hóa YouTube (Nếu có) ---
+google-api-python-client
+google-auth-oauthlib
