@@ -10,23 +10,28 @@ import time
 # DANH SÁCH MÃ VN-INDEX (HOSE/HNX)
 # ==============================
 VNINDEX_ALL = [
-    # Nhóm VN30
-    "ACB.VN", "BCM.VN", "BID.VN", "BVH.VN", "CTG.VN", "FPT.VN", "GAS.VN", "GVR.VN",
-    "HDB.VN", "HPG.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "POW.VN", "SAB.VN",
-    "SHB.VN", "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN",
-    "VIB.VN", "VIC.VN", "VJC.VN", "VNM.VN", "VPB.VN", "VRE.VN",
-    
-    # Nhóm Tài chính - Chứng khoán - Ngân hàng khác
-    "LPB.VN", "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN",
-    "VIX.VN", "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN",
+    # --- NHÓM VN30 (Cập nhật kỳ Q1/2026) ---
+    "ACB.VN", "BID.VN", "CTG.VN", "DGC.VN", "FPT.VN", "GAS.VN", "GVR.VN", "HDB.VN", 
+    "HPG.VN", "LPB.VN", "MBB.VN", "MSN.VN", "MWG.VN", "PLX.VN", "SAB.VN", "SHB.VN", 
+    "SSB.VN", "SSI.VN", "STB.VN", "TCB.VN", "TPB.VN", "VCB.VN", "VHM.VN", "VIB.VN", 
+    "VIC.VN", "VJC.VN", "VNM.VN", "VPB.VN", "VPL.VN", "VRE.VN",
 
-    # Nhóm Bất động sản - Xây dựng
+    # --- NHÓM TÀI CHÍNH - NGÂN HÀNG - CHỨNG KHOÁN MỞ RỘNG ---
+    "MSB.VN", "OCB.VN", "EIB.VN", "VDS.VN", "HCM.VN", "VCI.VN", "VND.VN", "VIX.VN", 
+    "FTS.VN", "BSI.VN", "CTS.VN", "AGR.VN", "ORS.VN", "TCBS.VN", "MBS.VN",
+
+    # --- NHÓM BẤT ĐỘNG SẢN - XÂY DỰNG - KHU CÔNG NGHIỆP ---
     "NVL.VN", "PDR.VN", "DIG.VN", "DXG.VN", "NLG.VN", "KDH.VN", "KBC.VN", "CTD.VN",
     "SZC.VN", "VGC.VN", "TCH.VN", "HDC.VN", "CII.VN", "HHV.VN", "LCG.VN", "VCG.VN",
+    "BCM.VN", "IDC.VN", # BCM chuyển xuống đây, thêm IDC cực kỳ mạnh
 
-    # Nhóm Thép - Sản xuất - Năng lượng
-    "HSG.VN", "NKG.VN", "DGC.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", 
-    "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
+    # --- NHÓM CÔNG NGHIỆP - NĂNG LƯỢNG - HÀNG KHÔNG ---
+    "HSG.VN", "NKG.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", "REE.VN", 
+    "HDG.VN", "NT2.VN", "POW.VN", "HVN.VN", # POW chuyển xuống, thêm HVN (Vietnam Airlines)
+
+    # --- NHÓM CÔNG NGHỆ - BÁN LẺ - TIÊU DÙNG (Cực quan trọng) ---
+    "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN", "MCH.VN", "CTR.VN", "VGI.VN",
+    "MSB.VN", "ACV.VN", "BSR.VN" # Thêm MCH, CTR, ACV, BSR là các mã thanh khoản tỷ đô
 ]
 def get_market_data():
     try:
