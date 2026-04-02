@@ -61,8 +61,8 @@ Style: TickerStyle,DejaVu Sans,34,&H0000D7FF,&H00000000,&H00000000,&H00000000,-1
 
     # --- 4. HIỆU ỨNG CHỮ CHẠY (BANNER) ---
     # Banner;delay;left_to_right;fadeawaywidth
-    # delay (18): Tốc độ chạy (số càng nhỏ chạy càng nhanh)
-    # left_to_right (1): 1 là chạy từ Trái sang Phải, 0 là Phải sang Trái
+    # delay (15): Tốc độ chạy (số càng nhỏ chạy càng nhanh)
+    # left_to_right (0): 1 là chạy từ Trái sang Phải, 0 là Phải sang Trái
     effect = "Banner;18;1;0"
 
     # --- 5. TẠO DÒNG SỰ KIỆN (EVENT LINE) ---
