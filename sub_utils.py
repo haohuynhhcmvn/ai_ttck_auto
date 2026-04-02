@@ -15,7 +15,7 @@ def create_ticker_sub(ticker_text, duration_seconds, filename="ticker.ass"):
     # --- 2. CẤU HÌNH VỊ TRÍ (QUAN TRỌNG) ---
     # MarginV cho Alignment 2 (Bottom-Center) là khoảng cách từ CẠNH DƯỚI lên.
     # Để chữ nằm ở vùng Y=140 (gần đỉnh đầu video 1280), MarginV phải khoảng 1140.
-    margin_v_position = 1130 
+    margin_v_position = 1122 
 
     # --- 3. ĐỊNH DẠNG THỜI GIAN ---
     def format_time(seconds):
