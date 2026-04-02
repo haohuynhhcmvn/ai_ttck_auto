@@ -112,7 +112,7 @@ def draw_overlay(data, size=(720, 1280)):
     # Thanh ngang chân trang
     draw.rectangle((0, 1200, 720, 1280), fill=(10, 10, 10, 220))
     footer_main = "NGUỒN DỮ LIỆU: REAL-TIME MARKET DATA (HOSE/HNX)"
-    footer_sub = "Bản quyền nội dung thuộc về Tâm sự 24h • 2026"
+    footer_sub = "Product by: Tâm sự 24h • Tin tức - Tài chính - Công nghệ"
     
     draw.text((30, 1215), footer_main, font=f_tiny, fill=C_SUB)
     draw.text((30, 1245), footer_sub, font=f_tiny, fill=(100, 100, 100))
