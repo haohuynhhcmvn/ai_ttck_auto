@@ -23,7 +23,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 QWEN_MODEL = "qwen/qwen3.5-122b-a10b"
-GEMINI_MODEL = "gemini-2.0-flash" # Cập nhật model mới nhất nếu có thể
+GEMINI_MODEL = "gemini-2.5-flash" # Cập nhật model mới nhất nếu có thể
 
 # ==============================
 # DYNAMIC PERSONA CONFIG (Chống rập khuôn)
