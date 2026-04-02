@@ -75,7 +75,7 @@ def draw_overlay(data, size=(720, 1280)):
             draw.line((40, start_y+40, 680, start_y+40), fill=(255,255,255,15))
             start_y += row_h
 
-    start_y += 45 
+    start_y += 40 
 
     # --- TOP GIẢM ---
     if losers:
