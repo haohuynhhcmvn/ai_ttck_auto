@@ -1,28 +1,25 @@
 # ==============================
-# BLOOMBERG STYLE OVERLAY (LEAN - PRO)
+# BLOOMBERG STYLE OVERLAY (PRO VERSION - OPTIMIZED)
 # ==============================
 
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from datetime import datetime
-import pytz  # <--- THÊM THƯ VIỆN NÀY
+import pytz
 import platform
 
 # ==============================
 # SMART FONT LOADER
 # ==============================
 def load_font(size, bold=False):
-    """Tự động tìm font phù hợp trên mọi OS"""
     system = platform.system()
-    fonts = []
-    
     if system == "Windows":
-        fonts = ["arialbd.ttf" if bold else "arial.ttf", "calibrib.ttf", "segoeuib.ttf"]
-    else: # Linux/Docker
+        fonts = ["arialbd.ttf" if bold else "arial.ttf", "calibrib.ttf"]
+    else:
+        # Font cho GitHub Actions / Docker (DejaVuSans là chuẩn nhất)
         fonts = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/liberation/LiberationSans-Bold.ttf",
-            "DejaVuSans-Bold.ttf"
+            f"/usr/share/fonts/truetype/dejavu/DejaVuSans{'-Bold' if bold else ''}.ttf",
+            "/usr/share/fonts/liberation/LiberationSans-Bold.ttf" if bold else "/usr/share/fonts/liberation/LiberationSans.ttf"
         ]
     
     for f in fonts:
@@ -33,87 +30,91 @@ def load_font(size, bold=False):
     return ImageFont.load_default()
 
 # ==============================
-# COLOR PALETTE
+# COLOR PALETTE (BLOOMBERG)
 # ==============================
-C_BG = (0, 0, 0, 140)      # Nền đen trong suốt
-C_ACCENT = (255, 165, 0)   # Cam Bloomberg
-C_UP = (0, 255, 127)       # Xanh neon
-C_DOWN = (255, 69, 58)     # Đỏ rực
+C_ACCENT = (255, 153, 0)    # Cam Bloomberg đặc trưng
+C_BG_BOX = (15, 15, 15, 180) # Nền đen phủ mờ (Glassmorphism nhẹ)
+C_UP = (0, 255, 150)        # Xanh Emerald
+C_DOWN = (255, 60, 60)      # Đỏ rực
 C_WHITE = (255, 255, 255, 255)
-
-# ==============================
-# DRAW OVERLAY (PRO VERSION)
-# ==============================
-# ==============================
-# BLOOMBERG STYLE OVERLAY (VIETNAM TIME READY)
-# ==============================
+C_SUB = (180, 180, 180, 255) # Màu chữ phụ
 
 def get_vietnam_now():
-    """Lấy thời gian hiện tại chuẩn múi giờ Việt Nam"""
     tz = pytz.timezone('Asia/Ho_Chi_Minh')
     return datetime.now(tz)
 
 # ==============================
-# DRAW OVERLAY (PRO VERSION)
+# MAIN DRAW FUNCTION
 # ==============================
 def draw_overlay(data, size=(720, 1280)):
-    # 1. Tạo base layer RGBA
     img = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    f_header = load_font(40, bold=True)
-    f_section = load_font(38, bold=True)
-    f_ticker = load_font(30, bold=True)
+    # Load Fonts
+    f_h1 = load_font(42, bold=True)
+    f_h2 = load_font(36, bold=True)
+    f_body = load_font(32, bold=True)
     f_small = load_font(24)
+    f_tiny = load_font(20)
 
-    # --- HEADER BAR ---
-    draw.rectangle((0, 0, 720, 100), fill=C_ACCENT)
-    draw.text((30, 20), "BẢN TIN CHỨNG KHOÁN", font=f_header, fill="black")
+    # --- 1. HEADER BAR (0 -> 110px) ---
+    draw.rectangle((0, 0, 720, 110), fill=C_ACCENT)
+    draw.text((30, 15), "BẢN TIN TÀI CHÍNH 247", font=f_h1, fill="black")
     
-    # --- CẬP NHẬT GIỜ VIỆT NAM ---
     now_vn = get_vietnam_now()
-    # Hiển thị thêm "ICT" để tăng độ uy tín cho bản tin
-    today_str = now_vn.strftime("%H:%M | %d/%m/%Y (ICT)") 
-    draw.text((380, 65), today_str, font=f_small, fill="black") # Chỉnh lại tọa độ x một chút để tránh tràn lề
+    time_str = now_vn.strftime("%H:%M  •  %d/%m/%Y (ICT)")
+    draw.text((30, 68), time_str, font=f_small, fill=(40, 40, 40))
 
-    # --- CONTAINER BACKGROUND ---
-    margin_x = 20
-    draw.rounded_rectangle((margin_x, 110, 700, 1150), radius=15, fill=C_BG)
+    # --- 2. MAIN CONTAINER ---
+    # Vẽ khung chứa nội dung chính
+    draw.rounded_rectangle((25, 130, 695, 1180), radius=20, fill=C_BG_BOX)
 
-    y = 150
-
-    # --- TOP GAINERS ---
-    draw.text((50, y), "▲ TOP TĂNG", font=f_section, fill=C_UP)
-    y += 70
-
-    # Header cột (Thêm nhãn rõ ràng hơn)
-    draw.text((60, y), "MÃ CP", font=f_small, fill=(200, 200, 200))
-    draw.text((450, y), "BIẾN ĐỘNG (%)", font=f_small, fill=(200, 200, 200))
-    y += 45
-
-    # ... (Phần vòng lặp vẽ gainers/losers giữ nguyên logic cũ của bạn) ...
-    # Lưu ý: Trong vòng lặp, hãy đảm bảo hiển thị đúng số thực tế
-    for s, v in data.get("gainers", [])[:8]:
-        draw.line((60, y+40, 660, y+40), fill=(255, 255, 255, 30), width=1)
-        draw.text((60, y), str(s), font=f_ticker, fill=C_WHITE)
-        draw.text((450, y), f"+{v}%", font=f_ticker, fill=C_UP)
-        y += 65
-
-    # --- PHẦN LOSERS ---
-    y += 150 # Khoảng cách giữa 2 bảng
-    draw.text((50, y), "▼ TOP GIẢM", font=f_section, fill=C_DOWN)
-    y += 70
+    # --- 3. TOP GAINERS SECTION ---
+    curr_y = 160
+    draw.text((50, curr_y), "▲ TOP CỔ PHIẾU TĂNG TRƯỞNG", font=f_h2, fill=C_UP)
+    curr_y += 65
     
-    for s, v in data.get("losers", [])[:8]:
-        draw.line((60, y+40, 660, y+40), fill=(255, 255, 255, 30), width=1)
-        draw.text((60, y), str(s), font=f_ticker, fill=C_WHITE)
-        draw.text((450, y), f"{v}%", font=f_ticker, fill=C_DOWN)
-        y += 65
+    # Header cột
+    draw.text((70, curr_y), "MÃ CP", font=f_tiny, fill=C_SUB)
+    draw.text((480, curr_y), "BIẾN ĐỘNG (%)", font=f_tiny, fill=C_SUB)
+    curr_y += 35
 
-    # --- FOOTER ---
-    # Ghi chú dữ liệu theo giờ Việt Nam
-    draw.rectangle((0, 1200, 720, 1280), fill=(20, 20, 20, 200))
-    footer_text = f"Product by: Tâm sự 24h - Tin tức - Tài chính - Công nghệ"
-    draw.text((30, 1225), footer_text, font=f_small, fill=(150, 150, 150))
+    # Vòng lặp vẽ Gainers (Tối đa 10 mã để cân đối)
+    gainers = data.get("gainers", [])[:10]
+    for symbol, pct in gainers:
+        # Đường kẻ chia dòng mờ
+        draw.line((60, curr_y + 42, 660, curr_y + 42), fill=(255, 255, 255, 25), width=1)
+        # Mã CP
+        draw.text((70, curr_y), str(symbol), font=f_body, fill=C_WHITE)
+        # % Tăng (Thêm dấu + phía trước)
+        txt_pct = f"+{pct}%" if pct > 0 else f"{pct}%"
+        draw.text((480, curr_y), txt_pct, font=f_body, fill=C_UP)
+        curr_y += 52
+
+    # --- 4. TOP LOSERS SECTION ---
+    # Tự động nhảy xuống cách đoạn Tăng một khoảng hợp lý
+    curr_y += 60 
+    draw.text((50, curr_y), "▼ TOP CỔ PHIẾU GIẢM ĐIỂM", font=f_h2, fill=C_DOWN)
+    curr_y += 65
+    
+    draw.text((70, curr_y), "MÃ CP", font=f_tiny, fill=C_SUB)
+    draw.text((480, curr_y), "BIẾN ĐỘNG (%)", font=f_tiny, fill=C_SUB)
+    curr_y += 35
+
+    losers = data.get("losers", [])[:10]
+    for symbol, pct in losers:
+        draw.line((60, curr_y + 42, 660, curr_y + 42), fill=(255, 255, 255, 25), width=1)
+        draw.text((70, curr_y), str(symbol), font=f_body, fill=C_WHITE)
+        draw.text((480, curr_y), f"{pct}%", font=f_body, fill=C_DOWN)
+        curr_y += 52
+
+    # --- 5. FOOTER (Dưới cùng) ---
+    # Thanh ngang chân trang
+    draw.rectangle((0, 1200, 720, 1280), fill=(10, 10, 10, 220))
+    footer_main = "NGUỒN DỮ LIỆU: REAL-TIME MARKET DATA (HOSE/HNX)"
+    footer_sub = "Bản quyền nội dung thuộc về Tâm sự 24h • 2026"
+    
+    draw.text((30, 1215), footer_main, font=f_tiny, fill=C_SUB)
+    draw.text((30, 1245), footer_sub, font=f_tiny, fill=(100, 100, 100))
 
     return np.array(img)
