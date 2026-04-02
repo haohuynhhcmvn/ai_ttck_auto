@@ -53,9 +53,19 @@ def clean_text_for_tts(text):
     
     # 2. Xử lý từ viết tắt & thuật ngữ (Phiên âm hóa để AI đọc chuẩn 100%)
     replacements = {
+        # --- Nhóm Chỉ số & Sàn giao dịch ---
         "VN-INDEX": "Vờ ni In đếch",
         "VNINDEX": "Vờ ni In đếch",
         "VNI": "Vờ ni",
+        "HNX": "Hà Nội Index",
+        "UPCOM": "Up cơm",
+        "HOSE": "Hô-se",
+        "DOW JONES": "Dao Giôn",
+        "NASDAQ": "Nát đắc",
+        "S&P 500": "Ét en Pi năm trăm",
+        "FED": "Phét",
+    
+        # --- Nhóm Thuật ngữ Doanh nghiệp & Tài chính ---
         "HĐQT": "Hội đồng quản trị",
         "CP": "Cổ phần",
         "P/E": "P trên E",
@@ -64,11 +74,49 @@ def clean_text_for_tts(text):
         "BĐS": "Bất động sản",
         "NH": "Ngân hàng",
         "CK": "Chứng khoán",
-        "tăng trưởng": "tăng trưởng,", # Ngắt nghỉ tự nhiên sau từ khóa
+        "VNĐ": "Việt Nam Đồng",
+        "USD": "Đô la Mỹ",
+        "EBITDA": "Ê-bít-đa",
+    
+        # --- Nhóm Ngân hàng (Đọc tên thương hiệu) ---
+        "VCB": "Vietcombank",
+        "TCB": "Techcombank",
+        "STB": "Sacombank",
+        "MBB": "Ngân hàng Quân đội",
+        "VPB": "Vi-pi-banh",
+        "HDB": "Hát-đê-banh",
+        "BID": "Bi-Ai-Đi",
+        "CTG": "Viết-tin-banh",
+        "Agribank": "A-ghi-banh",
+    
+        # --- Nhóm Phân tích Kỹ thuật (Ghi rõ số để AI đọc chuẩn) ---
+        "MA150": "Mờ A một trăm năm mươi",
+        "MA200": "Mờ A hai trăm",
+        "RSI": "Rờ Ét i",
+        "MACD": "Mờ A xê đê",
+        "Fibonacci": "Phi-bô-na-si",
+        "Bollinger Bands": "Bô-lin-ger-ben",
+    
+        # --- Ký hiệu số & Đơn vị (Thêm dấu phẩy để ngắt nghỉ) ---
+        "tỷ": "tỷ,",
+        "triệu": "triệu,",
+        "điểm": "điểm,",
+        "%": " phần trăm,",
+        "+": "tăng",
+        "-": "giảm",
+    
+        # --- Từ nối & Trạng từ (Tạo nhịp điệu báo chí) ---
+        "tăng trưởng": "tăng trưởng,", 
         "giảm điểm": "giảm điểm,",
         "tuy nhiên": "tuy nhiên,",
         "do đó": "do đó,",
         "đặc biệt là": "đặc biệt là,",
+        "Đáng chú ý": "Đáng chú ý,",
+        "Theo đó": "Theo đó,",
+        "Mặt khác": "Mặt khác,",
+        "Kết phiên": "Kết phiên,",
+        "Dòng tiền": "Dòng tiền,",
+        "Áp lực chốt lời": "Áp lực chốt lời,",
     }
     
     # Duyệt và thay thế (Ưu tiên từ dài trước để tránh lỗi thay thế con)
