@@ -41,10 +41,10 @@ def draw_overlay(data, size=(720, 1280)):
     draw = ImageDraw.Draw(img)
     
     # Khởi tạo các cỡ font chữ khác nhau
-    f_h = load_font(42, True)      # Font Header chính
+    f_h = load_font(40, True)      # Font Header chính
     f_b = load_font(22, True)      # Font nội dung bảng (In đậm)
-    f_s = load_font(18)            # Font tiêu đề cột/phụ
-    f_title = load_font(32, True)  # Font tiêu đề nhóm (Top Tăng/Giảm)
+    f_s = load_font(20)            # Font tiêu đề cột/phụ
+    f_title = load_font(30, True)  # Font tiêu đề nhóm (Top Tăng/Giảm)
 
     # --- 1. VẼ HEADER (Phần đầu bản tin) ---
     draw.rectangle((0, 0, 720, 110), fill=C_ACCENT) # Nền cam
@@ -91,7 +91,7 @@ def draw_overlay(data, size=(720, 1280)):
             draw.line((40, start_y+35, 680, start_y+35), fill=(255,255,255,15))
             start_y += row_h
 
-    start_y += 36 # Khoảng cách giữa 2 bảng
+    start_y += 30 # Khoảng cách giữa 2 bảng
 
     # --- VẼ NHÓM CỔ PHIẾU GIẢM ---
     if losers:
