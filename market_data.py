@@ -30,120 +30,50 @@ VNINDEX_ALL = [
     # --- NHÓM HNX (Lưu ý PVS dùng .HN) ---
     "PVS.HN", "CEO.HN", "SHS.HN", "MBS.HN", "IDC.HN", "VCS.HN", "NTP.HN",
 ]
-
-def get_index_data():
-    """Lấy trạng thái chung của thị trường (VN-Index)"""
+def get_market_data():
     try:
+        # 1. Lấy dữ liệu VN-Index
         idx = yf.Ticker("^VNINDEX.VN")
-        df = idx.history(period="2d")
-        if len(df) >= 2:
-            last = df["Close"].iloc[-1]
-            prev = df["Close"].iloc[-2]
-            change = last - prev
-            pct = (change / prev) * 100
-            status = "TĂNG" if change > 0 else "GIẢM"
-            return {
+        df_idx = idx.history(period="2d")
+        index_info = {"point": "---", "change": 0, "pct": 0, "status": "Đi ngang"}
+        if len(df_idx) >= 2:
+            last = df_idx["Close"].iloc[-1]
+            change = last - df_idx["Close"].iloc[-2]
+            index_info = {
                 "point": round(last, 2),
                 "change": round(change, 2),
-                "pct": round(pct, 2),
-                "status": status
+                "pct": round((change / df_idx["Close"].iloc[-2]) * 100, 2),
+                "status": "TĂNG" if change > 0 else "GIẢM"
             }
-    except: pass
-    return {"point": "Đang cập nhật", "change": 0, "pct": 0, "status": "Đi ngang"}
 
-# ==============================
-# LẤY TOP TĂNG/GIẢM (DYNAMIC FILTER)
-# ==============================
-def get_top_stocks(limit=12): # <-- Đã tăng lên 12
-    results = []
-    print(f"📊 Đang quét dữ liệu thị trường ({len(VNINDEX_ALL)} mã)...")
-    
-    try:
-        raw = yf.download(
-            tickers=VNINDEX_ALL,
-            period="2d",
-            group_by="ticker",
-            auto_adjust=True,
-            threads=True,
-            progress=False,
-            timeout=30
-        )
-
+        # 2. Tải Batch dữ liệu 4 cột
+        raw = yf.download(tickers=VNINDEX_ALL, period="2d", group_by="ticker", progress=False, timeout=20)
+        results = []
         for s in VNINDEX_ALL:
             try:
                 df = raw[s].dropna()
                 if len(df) < 2: continue
-
                 last_p = df["Close"].iloc[-1]
                 prev_p = df["Close"].iloc[-2]
-                
-                if prev_p == 0: continue
                 pct = ((last_p - prev_p) / prev_p) * 100
-
                 results.append({
-                    "symbol": s.replace(".VN", ""),
+                    "symbol": s.split('.')[0],
+                    "price": round(last_p, 2),
                     "change": round(pct, 2),
-                    "price": round(last_p, 2)
+                    "volume": df["Volume"].iloc[-1]
                 })
             except: continue
 
-    except Exception as e:
-        print(f"⚠️ Lỗi tải Batch: {e}")
-
-    if not results: return [], []
-
-    df_res = pd.DataFrame(results)
-    
-    # BƯỚC LỌC THÔNG MINH (CHỐNG LỖI LOGIC)
-    # 1. Chỉ lấy những mã thực sự có % > 0 làm gainers
-    df_gainers = df_res[df_res["change"] > 0].sort_values("change", ascending=False)
-    
-    # 2. Chỉ lấy những mã thực sự có % < 0 làm losers
-    df_losers = df_res[df_res["change"] < 0].sort_values("change", ascending=True)
-
-    # Dùng .head(limit): Hàm này tự động tùy biến. Nếu df chỉ có 7 mã, nó trả về 7. Nếu có 50, nó lấy đúng 12.
-    gainers = df_gainers.head(limit)
-    losers = df_losers.head(limit)
-
-    return list(zip(gainers["symbol"], gainers["change"])), \
-           list(zip(losers["symbol"], losers["change"]))
-
-# ==============================
-# HÀM CHÍNH CHO PIPELINE
-# ==============================
-def get_market_data():
-    try:
-        index_info = get_index_data()
-        
-        # Mặc định gọi giới hạn 12 mã
-        gainers, losers = get_top_stocks(limit=12) 
-        
-        gain_text = ", ".join([f"{m} tăng {c}%" for m, c in gainers]) if gainers else "không có mã tăng"
-        lose_text = ", ".join([f"{m} giảm {c}%" for m, c in losers]) if losers else "không có mã giảm"
-
-        market_status = f"VN-Index hiện ở mức {index_info['point']} điểm, {index_info['status']} {abs(index_info['change'])} điểm, tương đương {abs(index_info['pct'])}%."
+        df_res = pd.DataFrame(results)
+        gainers = df_res[df_res["change"] > 0].sort_values("change", ascending=False).head(12).to_dict('records')
+        losers = df_res[df_res["change"] < 0].sort_values("change", ascending=True).head(12).to_dict('records')
 
         return {
-            "index_summary": market_status,
+            "index_summary": f"VN-Index: {index_info['point']} ({index_info['change']})",
             "gainers": gainers,
             "losers": losers,
-            "gain_text": gain_text,
-            "lose_text": lose_text,
             "raw_index": index_info
         }
     except Exception as e:
-        print(f"❌ Market Data sập: {e}")
-        return {
-            "index_summary": "Thị trường đang có những diễn biến mới.",
-            "gainers": [], "losers": [],
-            "gain_text": "đang cập nhật", "lose_text": "đang cập nhật",
-            "raw_index": {}
-        }
-
-# --- TEST ---
-if __name__ == "__main__":
-    data = get_market_data()
-    print("--- TỔNG QUAN ---")
-    print(data["index_summary"])
-    print(f"\n🚀 TOP TĂNG ({len(data['gainers'])} mã):", data["gain_text"])
-    print(f"📉 TOP GIẢM ({len(data['losers'])} mã):", data["lose_text"])
+        print(f"❌ Market Data Error: {e}")
+        return {"gainers": [], "losers": [], "index_summary": "Dữ liệu đang cập nhật"}
