@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+from datetime import datetime, timezone, timedelta # <-- THÊM DÒNG NÀY
 
 # Fix lỗi MoviePy đôi khi không giải phóng file audio trên Windows/Linux
 os.environ["IMAGEIO_FFMPEG_EXE"] = "ffmpeg" 
@@ -120,9 +121,18 @@ def process_video(topic, index):
 
     # --- BƯỚC 9 & 10: PHÂN PHỐI ---
     # Ưu tiên gửi Telegram trước vì tỷ lệ thành công cao hơn YouTube
+    # --- BƯỚC 9 & 10: PHÂN PHỐI ---
     print("9️⃣ Đang gửi thông báo Telegram...")
     try:
-        send_message(f"🚨 **ĐÃ LÊN SÓNG**\n\n{content}")
+        # Lấy giờ Việt Nam (UTC+7) chuẩn xác dù server ở bất kỳ đâu
+        vn_timezone = timezone(timedelta(hours=7))
+        current_date = datetime.now(vn_timezone).strftime("%d/%m/%Y")
+        
+        # Tạo tiêu đề chuẩn
+        title = f"BẢN TIN TÀI CHÍNH 247 - NGÀY {current_date}"
+        
+        # Gửi tin nhắn và video
+        send_message(f"🚨 **{title}**\n\n{content}")
         send_video(output)
     except Exception as e:
         print(f"⚠️ Lỗi Telegram: {e}")
