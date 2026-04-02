@@ -27,8 +27,6 @@ VNINDEX_ALL = [
     # Nhóm Thép - Sản xuất - Năng lượng
     "HSG.VN", "NKG.VN", "DGC.VN", "CSV.VN", "DCM.VN", "DPM.VN", "PVD.VN", "PVT.VN", 
     "REE.VN", "HDG.VN", "NT2.VN", "FRT.VN", "DGW.VN", "PNJ.VN", "GMD.VN", "VHC.VN"
-    # --- NHÓM HNX (Lưu ý PVS dùng .HN) ---
-    "PVS.HN", "CEO.HN", "SHS.HN", "MBS.HN", "IDC.HN", "VCS.HN", "NTP.HN",
 ]
 def get_market_data():
     try:
