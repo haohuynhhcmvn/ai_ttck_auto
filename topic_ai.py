@@ -17,25 +17,90 @@ QWEN_MODEL = "qwen/qwen3.5-122b-a10b"
 # DYNAMIC TOPIC ANGLES (Bí kíp chống nhàm chán)
 # ==============================
 TOPIC_ANGLES = [
+    # --- NHÓM CHIẾN THUẬT & KỸ THUẬT (15-20) ---
     {
-        "name": "Tâm lý đám đông",
-        "focus": "Bẫy tâm lý, FOMO, nỗi sợ, sự thật ngầm hiểu về hành vi nhà đầu tư cá nhân.",
-        "example": "Tại sao bạn luôn mua đúng đỉnh và bán đúng đáy?"
+        "name": "Bắt bài Gap (Khoảng trống giá)",
+        "focus": "Ý nghĩa của Gap tăng/giảm đầu phiên và cách xử lý khi thị trường 'mở cửa trong hưng phấn'.",
+        "example": "Gap kiệt sức hay Gap bùng nổ? Đừng để bảng điện đánh lừa."
     },
     {
-        "name": "Dòng tiền thông minh",
-        "focus": "Cách 'Cá mập' vận hành, dấu vết dòng tiền lớn, sự thao túng và bẫy thanh khoản.",
-        "example": "Dấu hiệu nhận biết dòng tiền lớn đang âm thầm rút lui."
+        "name": "Sức mạnh của Nhóm dẫn dắt (Leader)",
+        "focus": "Cách nhận diện dòng cổ phiếu 'vượt bão' và dẫn dắt chỉ số khi thị trường hồi phục.",
+        "example": "Muốn biết thị trường tạo đáy hay chưa, hãy nhìn vào nhóm cổ phiếu dẫn dắt."
     },
     {
-        "name": "Tư duy ngược (Contrarian)",
-        "focus": "Đi ngược lại số đông, những góc nhìn ít người dám nói, cảnh báo khi thị trường hưng phấn.",
-        "example": "Lý do bạn nên đứng ngoài khi cả thế giới đang hô hào múc."
+        "name": "Nghệ thuật đi vốn (Position Sizing)",
+        "focus": "Không phải mua con gì, mà là mua bao nhiêu? Cách phân bổ tỷ trọng an toàn.",
+        "example": "Tại sao thắng 9 lệnh vẫn lỗ trắng tay ở lệnh thứ 10 vì sai tỷ trọng?"
     },
     {
-        "name": "Quản trị rủi ro & Bài học",
-        "focus": "Sai lầm xương máu, cách giữ tiền, quy tắc cắt lỗ, quản lý vốn của dân chuyên nghiệp.",
-        "example": "Sai lầm chí mạng khiến 90 phần trăm tài khoản cháy sạch."
+        "name": "Cạm bẫy 'Trung bình giá xuống'",
+        "focus": "Phân tích sự nguy hiểm của việc gồng lỗ và cố gắng hạ giá vốn trong một xu hướng giảm.",
+        "example": "Trung bình giá xuống là con đường ngắn nhất dẫn đến 'cháy' tài khoản."
+    },
+    {
+        "name": "Đọc vị Khối lượng (Volume Spread)",
+        "focus": "Mối quan hệ giữa nỗ lực (Vol) và kết quả (Giá). Khi nào Vol lớn là phân phối?",
+        "example": "Giá không tăng nhưng Vol cực lớn: Dấu hiệu cá mập đang âm thầm xả hàng."
+    },
+    {
+        "name": "Chiến lược 'Breakout' ảo",
+        "focus": "Cách nhận diện những phiên bùng nổ giả để bẫy nhà đầu tư đu bám (Bull-trap).",
+        "example": "Đừng vội mừng khi cổ phiếu vượt đỉnh: 70 phần trăm Breakout là giả?"
+    },
+
+    # --- NHÓM TÂM LÝ & TRIẾT LÝ (21-25) ---
+    {
+        "name": "Kỷ luật thép (Marathon Mindset)",
+        "focus": "Đầu tư là cuộc đua đường dài, cần sự bền bỉ và nhịp thở đều đặn như khi chạy bộ.",
+        "example": "Tâm thế của một Runner trong đầu tư: Đừng chạy nước rút ở đoạn đường 42km."
+    },
+    {
+        "name": "Sống sót qua mùa Downtrend",
+        "focus": "Cách bảo vệ tâm lý và tài sản khi thị trường gấu kéo dài.",
+        "example": "Thành công trong chứng khoán không phải là kiếm bao nhiêu, mà là sống sót bao lâu."
+    },
+    {
+        "name": "Sức mạnh của sự Tĩnh lặng",
+        "focus": "Tại sao việc 'không làm gì' đôi khi lại là quyết định đầu tư sáng suốt nhất.",
+        "example": "Khi thị trường nhiễu loạn, đứng ngoài quan sát cũng là một loại vị thế."
+    },
+    {
+        "name": "Cái giá của sự Nôn nóng",
+        "focus": "Phân tích tác hại của việc giao dịch quá nhiều (Overtrading) và phí thuế bào mòn lợi nhuận.",
+        "example": "Làm giàu chậm là cách nhanh nhất để giàu bền vững trên thị trường."
+    },
+    {
+        "name": "Nhật ký sai lầm",
+        "focus": "Khuyến khích ghi chép và đối mặt với những quyết định sai để trưởng thành hơn.",
+        "example": "Mỗi lần thua lỗ là một học phí đắt giá, đừng để nó trở nên vô ích."
+    },
+
+    # --- NHÓM VĨ MÔ & THỊ TRƯỜNG (26-30) ---
+    {
+        "name": "Chu kỳ kinh tế và Túi tiền",
+        "focus": "Cổ phiếu thường chạy trước nền kinh tế thực. Cách nhìn nhận chu kỳ để chọn nhóm ngành.",
+        "example": "Tại sao kinh tế còn khó khăn mà chứng khoán đã tăng phi mã?"
+    },
+    {
+        "name": "Tác động của Liên thị trường",
+        "focus": "Mối tương quan giữa Bitcoin, Vàng, Dầu và Chứng khoán toàn cầu.",
+        "example": "Thế giới hắt hơi, VN-Index có sổ mũi? Nhìn Dow Jones đoán vận mệnh."
+    },
+    {
+        "name": "Mùa báo cáo tài chính",
+        "focus": "Cách đọc nhanh các con số cốt lõi và cảnh báo 'tin ra là bán'.",
+        "example": "Lợi nhuận đột biến nhưng giá giảm: Nghịch lý hay quy luật tất yếu?"
+    },
+    {
+        "name": "Dòng tiền Phái sinh & Cơ sở",
+        "focus": "Sự liên đới giữa thị trường phái sinh và áp lực lên các mã trụ trong phiên ATC.",
+        "example": "Đọc vị những pha 'bẻ lái' ngoạn mục của thị trường nhờ soi bảng phái sinh."
+    },
+    {
+        "name": "Kế hoạch cho ngày mai",
+        "focus": "Luôn luôn chuẩn bị sẵn kịch bản hành động cho phiên kế tiếp thay vì bị động theo bảng điện.",
+        "example": "Nhà đầu tư chuyên nghiệp làm gì sau khi sàn chứng khoán đóng cửa?"
     }
 ]
 
