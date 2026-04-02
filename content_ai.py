@@ -1,75 +1,55 @@
 # ==============================
-# GENERATE SOCIAL CONTENT (AI POWERED)
+# GENERATE SOCIAL CONTENT PRO (DYNAMIC REVERSE-ENGINEERING)
 # ==============================
 
 import requests
 import os
 import time
 import random
+import re
 
 # ==============================
-# CONFIG & API KEYS (Đồng nhất với generate_script)
+# CONFIG & API KEYS
 # ==============================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 QWEN_MODEL = "qwen/qwen3.5-122b-a10b"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-1.5-flash" # Dùng bản Flash để tối ưu tốc độ cho Social
 
 # ==============================
-# LLM CALLS (Giữ nguyên logic gọi API của bạn)
+# LLM CALLS
 # ==============================
-def call_qwen_social(prompt, retry=3): # Tăng lên 3 lần thử
+def call_qwen_social(prompt, retry=3):
     url = "https://integrate.api.nvidia.com/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {NVIDIA_API_KEY}", 
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là chuyên gia Content Creator tài chính. Nhiệm vụ của bạn là tạo bài đăng thu hút dựa trên dữ liệu, nhưng tuyệt đối tuân thủ chính sách cộng đồng: KHÔNG hứa hẹn lợi nhuận, KHÔNG dùng từ ngữ gây sốc tiêu cực hoặc lôi kéo đầu tư. Sử dụng emoji khéo léo để tăng tính trực quan."},
+            {"role": "system", "content": "Bạn là giám đốc nội dung cho quỹ đầu tư. Viết bài ngắn gọn, sắc sảo, dùng ngôn ngữ chuyên gia nhưng gần gũi với nhà đầu tư cá nhân."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.7,
-        "max_tokens": 1000 # Tăng nhẹ để tránh bị cắt cụt content
+        "temperature": 0.8,
+        "max_tokens": 800
     }
-    
     for i in range(retry):
         try:
-            # Tăng timeout lên 60s vì Qwen 122B xử lý Tiếng Việt khá nặng
-            res = requests.post(url, headers=headers, json=payload, timeout=60) 
-            
+            res = requests.post(url, headers=headers, json=payload, timeout=60)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"]
-            
-            elif res.status_code == 429:
-                print(f"⏳ Đang bị giới hạn (Rate Limit), nghỉ 10s trước khi thử lại lần {i+1}...")
-                time.sleep(10)
-            else:
-                print(f"⚠️ Qwen trả về lỗi mã: {res.status_code}")
-                
-        except requests.exceptions.Timeout:
-            print(f"🕒 Lần {i+1}: API phản hồi quá chậm (Timeout). Đang thử lại...")
-        except Exception as e:
-            print(f"❌ Lần {i+1} lỗi: {e}")
-        
-        # Nghỉ tăng dần giữa các lần retry (2s, 4s, 8s...)
-        time.sleep(2 * (i + 1))
-        
+            time.sleep(5)
+        except: time.sleep(5)
     return None
 
 def call_gemini_social(prompt, retry=2):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.9}}
     for i in range(retry):
         try:
             res = requests.post(url, json=payload, timeout=25)
             if res.status_code == 200:
                 return res.json()["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception as e:
-            print(f"⚠️ Gemini Social lỗi: {e}")
-            time.sleep(2)
+        except: time.sleep(2)
     return None
 
 # ==============================
@@ -77,45 +57,55 @@ def call_gemini_social(prompt, retry=2):
 # ==============================
 def script_to_content(script, topic=None):
     """
-    Sử dụng AI để chuyển đổi script TTS sang nội dung mạng xã hội chuyên nghiệp.
+    Chuyển đổi kịch bản TTS sang bài đăng Social chuẩn chỉnh.
     """
     
+    # Danh sách các 'Góc nhìn' để bài đăng đa dạng
+    angles = [
+        "Tóm tắt nhanh cho nhà đầu tư bận rộn.",
+        "Phân tích sâu về hành vi dòng tiền phiên nay.",
+        "Cảnh báo các bẫy tâm lý xuất hiện trong phiên.",
+        "Góc nhìn vĩ mô và tác động đến nhóm ngành nổi bật."
+    ]
+    current_angle = random.choice(angles)
+
     prompt = f"""
-# NHIỆM VỤ: Chuyển đổi kịch bản đọc (TTS) thành bài đăng mạng xã hội chuyên nghiệp (Tối đa 200 từ).
-# CHỦ ĐỀ: {topic if topic else "Phân tích thị trường"}
-# KỊCH BẢN GỐC: {script}
+# ROLE: Bạn là Chuyên gia Content Marketing trong lĩnh vực Fintech.
+# NHIỆM VỤ: Chuyển kịch bản đọc (TTS) bên dưới thành 1 bài đăng Social thu hút.
+# CHIẾN THUẬT NỘI DUNG: {current_angle}
 
-# QUY TẮC VIẾT (NÉ VI PHẠM):
-1. CHUẨN HÓA: 'Vờ ni In đéc' -> 'VN-Index', 'phần trăm' -> '%', 'phẩy' -> dấu chấm thập phân.
-2. NÉ TỪ KHÓA ĐEN: Không dùng "Làm giàu", "Kiếm tiền", "Sập", "Đáy/Đỉnh", "Cam kết". Thay bằng "Vận động thị trường", "Quản trị danh mục", "Tín hiệu kỹ thuật".
-3. THỰC TẾ: Dựa hoàn toàn vào dữ liệu trong kịch bản gốc, không tự chế thêm các nhận định chủ quan quá đà.
+# KỊCH BẢN GỐC (Đã qua xử lý TTS): 
+{script}
 
-# CẤU TRÚC BÀI ĐĂNG:
-- Tiêu đề: Đưa ra vấn đề/câu hỏi tò mò về {topic} (Ví dụ: "Góc nhìn về vận động của VN-Index hôm nay").
-- Nội dung chính: 3-4 gạch đầu dòng phân tích dứt khoát về dòng tiền và nhóm ngành.
-- Danh sách: Liệt kê các mã cổ phiếu nổi bật kèm biến động %.
-- Kết luận: Nhấn mạnh vào việc quan sát kỷ luật và quản trị rủi ro.
-- Hashtag: 5 cái liên quan (Ví dụ: #chungkhoan #vimo #kienthucdautu).
+# YÊU CẦU QUAN TRỌNG (REVERSE-ENGINEERING):
+1. CHUẨN HÓA THUẬT NGỮ: 
+   - 'Vờ ni In đếch' hoặc 'Vờ ni' -> 'VN-Index'.
+   - 'phần trăm' -> '%'.
+   - 'phẩy' -> dấu chấm (vd: mười lăm phẩy năm -> 15.5).
+   - Các chữ cái rời 'S S I', 'H P G' -> Viết liền thành mã 'SSI', 'HPG'.
+2. NÉ VI PHẠM: Tuyệt đối không dùng 'làm giàu', 'kiếm tiền', 'cam kết lãi', 'chắc chắn sập'. Thay bằng 'hiệu suất', 'quản trị rủi ro', 'vận động giá'.
+3. TRÌNH BÀY: Dùng tối đa 5 emoji. Chia đoạn rõ ràng.
 
-Chỉ trả về nội dung bài đăng. Không giải thích thêm.
+# CẤU TRÚC:
+- Tiêu đề: Đậm chất 'giật gân' nhưng chuyên nghiệp về {topic}.
+- Nội dung: 3 ý chính rút gọn từ kịch bản.
+- Hành động: Một lời khuyên về tư duy kỷ luật.
+- Hashtag: 5 cái bắt trend chứng khoán.
+
+Chỉ trả về nội dung bài đăng, không thêm lời dẫn.
 """
-    print("🤖 AI đang viết nội dung bài đăng Social...")
-    # Thử Qwen trước, nếu lỗi thì dùng Gemini
+    print(f"🤖 AI đang viết Social Post (Angle: {current_angle})...")
     social_post = call_qwen_social(prompt) or call_gemini_social(prompt)
 
     if not social_post:
-        print("⚠️ Cả 2 AI Social lỗi, dùng logic dự phòng thủ công.")
-        # Logic dự phòng (Fallback) giống bản cũ của bạn
-        lines = script.split(".")
-        content = [f"🚨 {topic.upper()}" if topic else "📊 BẢN TIN CHỨNG KHOÁN"]
-        for i, line in enumerate(lines[:5]):
-            content.append(f"👉 {line.strip()}")
-        content.append("\n#chungkhoan #stock #dautu")
-        return "\n".join(content)
+        # Fallback an toàn nếu API lỗi
+        return f"📊 BẢN TIN THỊ TRƯỜNG: {topic}\n\n📍 Thị trường có những vận động đáng chú ý. Nhà đầu tư nên tập trung vào quản trị danh mục và giữ kỷ luật thép.\n\n#chungkhoan #vimo #dautu"
 
+    # Hậu xử lý nhẹ để đảm bảo sạch sẽ
+    social_post = social_post.replace("**", "").replace("###", "") # Xóa markdown thừa nếu AI tự ý thêm
     return social_post.strip()
 
 # --- TEST ---
 if __name__ == "__main__":
-    test_script = "Vờ ni In đéc hôm nay bùng nổ mạnh mẽ. Thị trường tăng mười lăm phẩy năm điểm. Nhóm thép dẫn đầu với mã Hòa Phát tăng kịch trần."
-    print(script_to_content(test_script, topic="VNINDEX BÙNG NỔ"))
+    test_script = "Vờ ni In đếch hôm nay tăng mười lăm phẩy năm điểm. Nhóm chứng khoán bùng nổ với mã S S I tăng kịch trần."
+    print(script_to_content(test_script, topic="THỊ TRƯỜNG HƯNG PHẤN"))
