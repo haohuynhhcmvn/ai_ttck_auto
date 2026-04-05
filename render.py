@@ -1,5 +1,6 @@
 # ==============================
-# RENDER ENGINE PRO (ULTIMATE UNICODE FIX)
+# RENDER ENGINE PRO (MUSIC & GHA OPTIMIZED)
+# BẢN TÍCH HỢP HOOK 3S ĐẦU + FIX UNICODE
 # ==============================
 
 import subprocess
@@ -9,27 +10,37 @@ import glob
 import uuid
 import textwrap
 import unicodedata
-from moviepy.editor import AudioFileClip
+from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
 from PIL import Image, ImageDraw, ImageFont
 
+# Dummy overlay nếu không tìm thấy module draw_overlay
+try:
+    from overlay import draw_overlay
+except ImportError:
+    def draw_overlay(data): return None
+
+# --- [MỚI]: HÀM VẼ ẢNH HOOK ĐỂ GIỮ CHÂN NGƯỜI XEM ---
 def create_hook_image(hook_text, output_path):
-    """Tạo ảnh nền đỏ chữ trắng. Fix lỗi xuống dòng và font chữ."""
-    # Chuẩn hóa Unicode NFC để tránh lỗi ký tự tổ hợp
+    """Tạo một tấm ảnh nền đỏ, chữ trắng cực to cho 2.5 giây đầu"""
+    # Fix Unicode: Đưa chữ về dạng chuẩn NFC để chống lỗi ký tự tổ hợp
     hook_text = unicodedata.normalize('NFC', str(hook_text))
     
     width, height = 720, 1280
-    img = Image.new("RGB", (width, height), (180, 0, 0))
+    img = Image.new("RGB", (width, height), (180, 0, 0)) # Nền đỏ thẫm
     draw = ImageDraw.Draw(img)
     
+    # Cố gắng load font chữ dày
     try:
         font = ImageFont.truetype("assets/fonts/Roboto-Black.ttf", 80)
         sub_font = ImageFont.truetype("assets/fonts/Roboto-Medium.ttf", 40)
     except:
-        # Nếu GHA thiếu font, dùng font mặc định nhưng sẽ xấu
         font = ImageFont.load_default()
         sub_font = ImageFont.load_default()
 
+    # Tự động xuống dòng cho Hook nếu quá dài
     lines = textwrap.wrap(hook_text, width=15)
+    
+    # Vẽ từng dòng chữ Hook
     current_h = 500
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -37,6 +48,7 @@ def create_hook_image(hook_text, output_path):
         draw.text(((width - w) / 2, current_h), line, font=font, fill=(255, 255, 255))
         current_h += h + 30
 
+    # Vẽ dòng chữ kêu gọi hành động (CTA)
     cta_text = "CHI TIẾT TRONG VIDEO 👇"
     bbox_cta = draw.textbbox((0, 0), cta_text, font=sub_font)
     sw = bbox_cta[2] - bbox_cta[0]
@@ -45,83 +57,249 @@ def create_hook_image(hook_text, output_path):
     img.save(output_path)
     return output_path
 
-# Giả định các hàm phụ trợ của ông ở đây...
-def get_random_bg_music(path): return None 
-def create_random_slideshow(p, d): return None
-
-def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None, video_hook=None):
-    # Chuẩn hóa hook ngay khi nhận vào
-    video_hook = unicodedata.normalize('NFC', str(video_hook or "BẢN TIN CHỨNG KHOÁN"))
-    print(f"🎬 [RENDER]: Đang xử lý Hook: {video_hook}")
+# --- HÀM LẤY NHẠC (GIỮ NGUYÊN) ---
+def get_random_bg_music(music_dir="assets/music"):
+    """Quét thư mục và chọn ngẫu nhiên 1 file nhạc mp3/wav"""
+    if not os.path.exists(music_dir):
+        return None
+    valid_extensions = ('*.mp3', '*.wav', '*.m4a')
+    music_files = []
+    for ext in valid_extensions:
+        music_files.extend(glob.glob(os.path.join(music_dir, ext)))
     
+    if not music_files:
+        return None
+    return random.choice(music_files)
+
+# --- HÀM TẠO SLIDESHOW (GIỮ NGUYÊN, ĐÃ TỐI ƯU GHA) ---
+def create_random_slideshow(folder_path, target_duration):
+    """
+    Tạo video nền từ ảnh JPG. 
+    Tối ưu cực hạn RAM để chạy mượt trên GitHub Actions 7GB RAM.
+    """
+    print(f"🖼️ [SLIDESHOW]: Đang xử lý ảnh tại {folder_path}")
+    search_path = os.path.join(folder_path, "*.jpg")
+    all_images = glob.glob(search_path)
+    
+    if not all_images:
+        return None
+
+    random.shuffle(all_images)
+    
+    clips = []
+    current_total_dur = 0
+    img_display_dur = 4    
+    transition_dur = 1     
+    
+    max_imgs = min(len(all_images), 20)
+    selected_images = all_images[:max_imgs]
+
+    i = 0
+    while current_total_dur < target_duration:
+        img_p = selected_images[i % len(selected_images)]
+        try:
+            with Image.open(img_p) as img:
+                img = img.convert("RGB")
+                w, h = img.size
+                aspect_target = 720/1280
+                aspect_img = w/h
+                
+                if aspect_img > aspect_target:
+                    new_w = int(aspect_img * 1280)
+                    img = img.resize((new_w, 1280), Image.LANCZOS)
+                    left = (new_w - 720) / 2
+                    img = img.crop((left, 0, left + 720, 1280))
+                else:
+                    new_h = int(720 / aspect_img)
+                    img = img.resize((720, new_h), Image.LANCZOS)
+                    top = (new_h - 1280) / 2
+                    img = img.crop((0, top, 720, top + 1280))
+                
+                temp_img_path = f"temp_img_{uuid.uuid4().hex[:5]}.jpg"
+                img.save(temp_img_path, quality=85)
+
+            clip = ImageClip(temp_img_path).set_duration(img_display_dur).set_fps(24)
+            clip = clip.set_position("center").crossfadein(transition_dur)
+            clips.append(clip)
+            
+            current_total_dur += (img_display_dur - transition_dur)
+            i += 1
+            if i > 50: break 
+            
+        except Exception as e:
+            print(f"❌ Lỗi ảnh: {e}")
+            i += 1
+            continue
+
+    if not clips: return None
+
+    final_video = concatenate_videoclips(clips, method="compose", padding=-transition_dur)
+    final_video = final_video.subclip(0, target_duration)
+    
+    temp_bg_name = f"bg_{uuid.uuid4().hex[:5]}.mp4"
+    
+    final_video.write_videofile(
+        temp_bg_name, 
+        fps=24, 
+        codec="libx264", 
+        audio=False, 
+        logger=None,
+        preset="ultrafast",
+        threads=2 
+    )
+    
+    for f in glob.glob("temp_img_*.jpg"): 
+        try: os.remove(f)
+        except: pass
+    
+    return temp_bg_name
+
+# --- HÀM RENDER CHÍNH (ĐÃ FIX LỖI LATIN-1 VÀ CHÈN LAYER HOOK) ---
+def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None, video_hook=None):
+    """
+    Hàm Render chính - Tích hợp Nhạc nền Random, Overlay và Hook ảnh tĩnh.
+    """
+    # Chuẩn hóa hook chống lỗi latin-1 ngay lập tức
+    safe_hook = unicodedata.normalize('NFC', str(video_hook or "TIN CHỨNG KHOÁN MỚI NHẤT"))
+    print(f"🎬 [RENDER]: Pipeline 9:16 đang chạy với Hook: '{safe_hook}'")
+    
+    temp_bg_file = None
     u_id = uuid.uuid4().hex[:5]
     overlay_path = f"ovl_{u_id}.png"
     hook_img_path = f"hook_{u_id}.png"
     
+    has_overlay = False
+    has_hook = False
+
+    # 1. Lấy thông tin Audio MC
     voice_clip = AudioFileClip(audio_path)
     duration = voice_clip.duration
     voice_clip.close()
 
-    # 1. Tạo ảnh Hook
-    create_hook_image(video_hook, hook_img_path)
+    # 2. Tạo ảnh Hook 
+    if video_hook:
+        create_hook_image(safe_hook, hook_img_path)
+        has_hook = True
 
-    # 2. Xây dựng Command List
-    # Để tránh lỗi Latin-1, chúng ta sẽ không để chuỗi Tiếng Việt vào 'cmd' 
-    # trừ khi nó là tên file (đã được xử lý bởi OS)
-    cmd = ["ffmpeg", "-y", "-loglevel", "error"]
-    
-    # Input 0: Nền
-    cmd += ["-f", "lavfi", "-i", f"color=c=black:s=720x1280:r=24:d={duration}"]
-    # Input 1: Hook (Ảnh đã được vẽ chữ, FFmpeg không cần quan tâm text là gì nữa)
-    cmd += ["-loop", "1", "-t", "2.5", "-i", f'"{hook_img_path}"']
-    # Input 3: Audio
-    cmd += ["-i", f'"{audio_path}"']
-    # Input 4: Music (Nếu có)
-    bg_music = "assets/music/bg.mp3" # Giả định
-    if os.path.exists(bg_music):
-        cmd += ["-stream_loop", "-1", "-i", f'"{bg_music}"']
+    # 3. Chọn nhạc nền ngẫu nhiên
+    bg_music_file = get_random_bg_music("assets/music")
 
-    # 3. Filter Complex
-    # Lưu ý: Các ký tự tiếng Việt trong 'ass' path cần được escape cực kỹ
-    filters = []
-    filters.append("[0:v]scale=720:1280,eq=saturation=1.2:contrast=1.1[bg]")
-    filters.append(f"[1:v]scale=720:1280[hook_v];[bg][hook_v]overlay=0:0:enable='between(t,0,2.5)'[v_hooked]")
+    # 4. Tạo Overlay (Biểu đồ/Tin tức)
+    if market_data:
+        try:
+            img_array = draw_overlay(market_data)
+            if img_array is not None:
+                ovl_img = Image.fromarray(img_array).resize((720, 1280))
+                ovl_img.save(overlay_path)
+                has_overlay = True
+        except: print("⚠️ [SKIP]: Overlay không khả dụng")
+
+    # 5. Chuẩn hóa đường dẫn Subtitle cho FFmpeg
+    safe_sub_path = subtitles.replace("\\", "/").replace(":", "\\:") if subtitles else None
+
+    # 6. Tạo Slideshow Background
+    picture_folder = "assets/picture"
+    if os.path.exists(picture_folder):
+        temp_bg_file = create_random_slideshow(picture_folder, duration)
+
+    # --- KHỞI TẠO LỆNH FFMPEG (CHUYỂN SANG LIST CHUẨN) ---
+    cmd = ["ffmpeg", "-y"]
     
-    if subtitles and os.path.exists(subtitles):
-        # Escape dấu hai chấm cho path trên Windows/Linux
-        safe_sub = subtitles.replace("\\", "/").replace(":", "\\:")
-        filters.append(f"[v_hooked]ass='{safe_sub}'[final_v]")
+    # [Input 0]: Video Background
+    if temp_bg_file:
+        cmd += ["-i", temp_bg_file]
     else:
-        filters.append("[v_hooked]copy[final_v]")
+        cmd += ["-f", "lavfi", "-i", f"color=c=black:s=720x1280:r=24:d={duration}"]
 
-    # Mix Audio
-    filters.append("[2:a]volume=1.0[v_a];[3:a]volume=0.1[m_a];[v_a][m_a]amix=inputs=2:duration=first[final_a]")
+    # [Input 1]: Ảnh Hook (Tĩnh, đè lên đầu)
+    if has_hook:
+        cmd += ["-loop", "1", "-t", "2.5", "-i", hook_img_path]
+    else:
+        cmd += ["-f", "lavfi", "-i", "color=c=black:s=2x2:d=0.1"] # Dummy input cho đủ index
 
-    cmd += ["-filter_complex", f'"{";".join(filters)}"']
-    cmd += ["-map", "[final_v]", "-map", "[final_a]", "-c:v", "libx264", "-preset", "ultrafast", f'"{output}"']
+    # [Input 2]: Overlay (PNG bảng điện)
+    if has_overlay:
+        cmd += ["-loop", "1", "-t", str(duration), "-i", overlay_path]
+    else:
+        cmd += ["-f", "lavfi", "-i", "color=c=black:s=2x2:d=0.1"]
 
-    # --- [CHỐT HẠ]: CHUYỂN TOÀN BỘ SANG STRING ĐỂ BYPASS CODEC ---
-    full_cmd = " ".join(cmd)
+    # [Input 3]: Giọng đọc (MC Voice)
+    cmd += ["-i", audio_path]
+
+    # [Input 4]: Nhạc nền (Tự động Loop)
+    if bg_music_file:
+        cmd += ["-stream_loop", "-1", "-i", bg_music_file]
+
+    # --- FILTER COMPLEX ---
+    filters = []
+    
+    # A. Xử lý nền
+    filters.append("[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,eq=saturation=1.2:contrast=1.1[bg]")
+    last_v = "[bg]"
+
+    # B. Xử lý Overlay Bảng điện (Đè lên nền)
+    if has_overlay:
+        filters.append(f"[2:v]scale=720:1280[ovl];{last_v}[ovl]overlay=0:0:shortest=1[v_over]")
+        last_v = "[v_over]"
+
+    # C. Xử lý Hook (Đè lên tất cả, nhưng chỉ hiện 2.5s đầu)
+    if has_hook:
+        filters.append(f"[1:v]scale=720:1280[hook_v];{last_v}[hook_v]overlay=0:0:enable='between(t,0,2.5)'[v_hooked]")
+        last_v = "[v_hooked]"
+
+    # D. Xử lý Subtitle
+    if safe_sub_path:
+        filters.append(f"{last_v}ass='{safe_sub_path}'[final_v]")
+    else:
+        filters.append(f"{last_v}copy[final_v]")
+
+    # E. Xử lý âm thanh (Mixing)
+    if bg_music_file:
+        # [3:a] là MC, [4:a] là nhạc nền
+        filters.append(f"[4:a]volume=0.08,atrim=0:{duration},afade=t=out:st={duration-2}:d=2[bg_a]")
+        filters.append(f"[3:a][bg_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]")
+    else:
+        filters.append("[3:a]copy[final_a]")
+
+    cmd += ["-filter_complex", ";".join(filters)]
+
+    # --- OUTPUT SETTINGS ---
+    cmd += [
+        "-map", "[final_v]",
+        "-map", "[final_a]",
+        "-c:v", "libx264",
+        "-preset", "slow",
+        "-crf", "22",
+        "-c:a", "aac", "-b:a", "128k",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        output
+    ]
+
+    # [FIX CỐT LÕI]: CHẠY FFMPEG VỚI ĐỊNH DẠNG CHUỖI ĐỂ TRÁNH LỖI LATIN-1
+    # Bằng cách chuyển mảng thành một chuỗi duy nhất và dùng shell=True, 
+    # ta bỏ qua cơ chế mã hóa tham số lằng nhằng của Python trên môi trường Server
+    full_command = " ".join([f'"{c}"' if ' ' in c or 'ass=' in c else c for c in cmd])
 
     try:
-        # Chạy lệnh với shell=True và encoding rõ ràng
         process = subprocess.run(
-            full_cmd,
-            shell=True, # Dùng shell giúp xử lý chuỗi Unicode tốt hơn trên Terminal
-            capture_output=True,
+            full_command, 
+            shell=True,
+            capture_output=True, 
             text=True,
-            encoding="utf-8",
+            encoding="utf-8", 
             errors="ignore"
         )
-        
-        if process.returncode != 0:
-            print(f"❌ [FFMPEG STDERR]: {process.stderr}")
+        if process.returncode == 0:
+            print(f"✅ [SUCCESS]: Video hoàn tất với nhạc nền và Hook -> {output}")
         else:
-            print(f"✅ [RENDER OK]: {output}")
-            
+            print(f"❌ [FFMPEG ERROR]: {process.stderr}")
     except Exception as e:
         print(f"❌ Render sập: {e}")
     finally:
-        if os.path.exists(hook_img_path): os.remove(hook_img_path)
+        # Dọn rác
+        if has_overlay and os.path.exists(overlay_path): os.remove(overlay_path)
+        if has_hook and os.path.exists(hook_img_path): os.remove(hook_img_path)
+        if temp_bg_file and os.path.exists(temp_bg_file): os.remove(temp_bg_file)
 
     return output
