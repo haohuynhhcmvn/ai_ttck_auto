@@ -1,6 +1,6 @@
-# ==============================
-# GENERATE SOCIAL CONTENT PRO (DYNAMIC REVERSE-ENGINEERING)
-# ==============================
+# ==============================================================
+# HỆ THỐNG TẠO NỘI DUNG MẠNG XÃ HỘI (REVERSE-ENGINEERING)
+# ==============================================================
 
 import requests
 import os
@@ -8,28 +8,29 @@ import time
 import random
 import re
 
-# ==============================
-# CONFIG & API KEYS
-# ==============================
+# --- CẤU HÌNH & MÃ API (LẤY TỪ BIẾN MÔI TRƯỜNG) ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
+# Chốt cứng 2 Model như đã thống nhất
 QWEN_MODEL = "qwen/qwen3.5-122b-a10b"
-GEMINI_MODEL = "gemini-2.5-flash" # Dùng bản Flash để tối ưu tốc độ cho Social
+GEMINI_MODEL = "gemini-2.5-flash" 
 
-# ==============================
-# LLM CALLS
-# ==============================
+# ==============================================================
+# CÁC HÀM GỌI AI (LLM CALLS)
+# ==============================================================
+
 def call_qwen_social(prompt, retry=3):
+    """Gọi model Qwen qua NVIDIA API để xử lý ngôn ngữ tài chính sắc sảo"""
     url = "https://integrate.api.nvidia.com/v1/chat/completions"
     headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": QWEN_MODEL,
         "messages": [
-            {"role": "system", "content": "Bạn là giám đốc nội dung cho quỹ đầu tư. Viết bài ngắn gọn, sắc sảo, dùng ngôn ngữ chuyên gia nhưng gần gũi với nhà đầu tư cá nhân."},
+            {"role": "system", "content": "Bạn là giám đốc nội dung cho quỹ đầu tư. Viết bài ngắn gọn, sắc sảo."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.8,
+        "temperature": 0.8, # Để AI sáng tạo tiêu đề giật gân hơn
         "max_tokens": 800
     }
     for i in range(retry):
@@ -37,11 +38,12 @@ def call_qwen_social(prompt, retry=3):
             res = requests.post(url, headers=headers, json=payload, timeout=60)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"]
-            time.sleep(5)
+            time.sleep(5) # Nghỉ 5s nếu API bận
         except: time.sleep(5)
     return None
 
 def call_gemini_social(prompt, retry=2):
+    """Gọi model Gemini 2.5 Flash để hỗ trợ nếu Qwen gặp sự cố"""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.9}}
     for i in range(retry):
@@ -52,15 +54,18 @@ def call_gemini_social(prompt, retry=2):
         except: time.sleep(2)
     return None
 
-# ==============================
-# MAIN FUNCTION: SCRIPT TO CONTENT
-# ==============================
+# ==============================================================
+# HÀM CHÍNH: BIẾN KỊCH BẢN THÀNH NỘI DUNG ĐA NỀN TẢNG
+# ==============================================================
+
 def script_to_content(script, topic=None):
     """
-    Chuyển đổi kịch bản TTS sang bài đăng Social chuẩn chỉnh.
+    Hàm này thực hiện 'truy ngược' kịch bản để tạo ra:
+    1. VIDEO_HOOK: Tiêu đề hiện 3 giây đầu để giữ chân người xem.
+    2. SOCIAL_POST: Bài đăng hoàn chỉnh cho Facebook/Telegram.
     """
     
-    # Danh sách các 'Góc nhìn' để bài đăng đa dạng
+    # Random các góc nhìn để nội dung kênh không bị nhàm chán
     angles = [
         "Tóm tắt nhanh cho nhà đầu tư bận rộn.",
         "Phân tích sâu về hành vi dòng tiền phiên nay.",
@@ -69,43 +74,65 @@ def script_to_content(script, topic=None):
     ]
     current_angle = random.choice(angles)
 
+    # Prompt yêu cầu AI bóc tách nội dung cực kỳ khắt khe
     prompt = f"""
-# ROLE: Bạn là Chuyên gia Content Marketing trong lĩnh vực Fintech.
-# NHIỆM VỤ: Chuyển kịch bản đọc (TTS) bên dưới thành 1 bài đăng Social thu hút.
-# CHIẾN THUẬT NỘI DUNG: {current_angle}
+# NHIỆM VỤ: 
+1. Tạo 1 câu VIDEO_HOOK (dưới 7 từ) để hiện lên 3 giây đầu video. 
+2. Viết bài đăng Social từ kịch bản TTS bên dưới.
 
-# KỊCH BẢN GỐC (Đã qua xử lý TTS): 
+# CHIẾN THUẬT: {current_angle}
+
+# KỊCH BẢN GỐC (Dữ liệu đầu vào): 
 {script}
 
-# YÊU CẦU QUAN TRỌNG (REVERSE-ENGINEERING):
-1. CHUẨN HÓA THUẬT NGỮ: 
-   - 'Vờ ni In đếch' hoặc 'Vờ ni' -> 'VN-Index'.
-   - 'phần trăm' -> '%'.
-   - 'phẩy' -> dấu chấm (vd: mười lăm phẩy năm -> 15.5).
-   - Các chữ cái rời 'S S I', 'H P G' -> Viết liền thành mã 'SSI', 'HPG'.
-2. NÉ VI PHẠM: Tuyệt đối không dùng 'làm giàu', 'kiếm tiền', 'cam kết lãi', 'chắc chắn sập'. Thay bằng 'hiệu suất', 'quản trị rủi ro', 'vận động giá'.
-3. TRÌNH BÀY: Dùng tối đa 5 emoji. Chia đoạn rõ ràng.
+# YÊU CẦU CHO VIDEO_HOOK (QUAN TRỌNG):
+- Phải cực gắt, đánh vào mã cổ phiếu hot nhất. Viết HOA toàn bộ. 
+- Mục tiêu: Khiến người xem dừng lướt ngay lập tức.
+- VD: "SSI: TÍN HIỆU CỰC MẠNH?", "CẢNH BÁO: ĐỪNG MUA NVL?", "THÁO CHẠY HAY GOM HÀNG?"
 
-# CẤU TRÚC:
-- Tiêu đề: Đậm chất 'giật gân' nhưng chuyên nghiệp về {topic}.
-- Nội dung: 3 ý chính rút gọn từ kịch bản.
-- Hành động: Một lời khuyên về tư duy kỷ luật.
-- Hashtag: 5 cái bắt trend chứng khoán.
+# CHUẨN HÓA DỮ LIỆU (REVERSE-ENGINEERING):
+- Chuyển 'Vờ ni In đếch' thành 'VN-Index'.
+- Chuyển 'phần trăm' thành '%', 'phẩy' thành dấu chấm '.'.
+- Ghép các mã cổ phiếu viết rời: 'H P G' -> 'HPG', 'V C B' -> 'VCB'.
 
-Chỉ trả về nội dung bài đăng, không thêm lời dẫn.
+# ĐỊNH DẠNG TRẢ VỀ (ÉP AI TRẢ VỀ ĐÚNG CẤU TRÚC NÀY):
+[VIDEO_HOOK]
+Câu tiêu đề video của bạn ở đây
+[SOCIAL_POST]
+Nội dung bài đăng mạng xã hội ở đây
 """
-    print(f"🤖 AI đang viết Social Post (Angle: {current_angle})...")
-    social_post = call_qwen_social(prompt) or call_gemini_social(prompt)
+    print(f"🤖 AI đang 'truy ngược' kịch bản để tạo Hook & Post...")
+    raw_response = call_qwen_social(prompt) or call_gemini_social(prompt)
 
-    if not social_post:
-        # Fallback an toàn nếu API lỗi
-        return f"📊 BẢN TIN THỊ TRƯỜNG: {topic}\n\n📍 Thị trường có những vận động đáng chú ý. Nhà đầu tư nên tập trung vào quản trị danh mục và giữ kỷ luật thép.\n\n#chungkhoan #vimo #dautu"
+    # Kết quả dự phòng nếu AI bị lỗi
+    result = {
+        "video_hook": f"BẢN TIN {topic.upper()}" if topic else "BẢN TIN CHỨNG KHOÁN",
+        "social_post": f"📊 Cập nhật thị trường: {topic}\n\nXem chi tiết tại video!"
+    }
 
-    # Hậu xử lý nhẹ để đảm bảo sạch sẽ
-    social_post = social_post.replace("**", "").replace("###", "") # Xóa markdown thừa nếu AI tự ý thêm
-    return social_post.strip()
+    if raw_response:
+        try:
+            # Dùng Regex để tách phần Hook và phần Post dựa trên thẻ [TAG]
+            hook_match = re.search(r"\[VIDEO_HOOK\]\n?(.*?)\n?\[SOCIAL_POST\]", raw_response, re.DOTALL)
+            post_match = re.search(r"\[SOCIAL_POST\]\n?(.*)", raw_response, re.DOTALL)
 
-# --- TEST ---
+            if hook_match:
+                # Lấy câu Hook, xóa dấu ngoặc kép và khoảng trắng thừa
+                result["video_hook"] = hook_match.group(1).strip().replace('"', '')
+            
+            if post_match:
+                # Lấy bài đăng Social, làm sạch định dạng Markdown
+                post = post_match.group(1).strip()
+                result["social_post"] = post.replace("**", "").replace("###", "")
+        except Exception as e:
+            print(f"⚠️ Lỗi bóc tách nội dung: {e}")
+            result["social_post"] = raw_response.strip()
+
+    return result # Trả về Dictionary cho main.py sử dụng
+
+# --- TEST THỬ NGHIỆM ---
 if __name__ == "__main__":
-    test_script = "Vờ ni In đếch hôm nay tăng mười lăm phẩy năm điểm. Nhóm chứng khoán bùng nổ với mã S S I tăng kịch trần."
-    print(script_to_content(test_script, topic="THỊ TRƯỜNG HƯNG PHẤN"))
+    test_script = "Vờ ni In đếch hôm nay tăng mười lăm phẩy năm điểm. Mã H P G bùng nổ khối lượng."
+    output = script_to_content(test_script, topic="THỊ TRƯỜNG BIẾN ĐỘNG")
+    print(f"\n🎬 TIÊU ĐỀ VIDEO (3s ĐẦU): {output['video_hook']}")
+    print(f"📝 BÀI ĐĂNG SOCIAL:\n{output['social_post']}")
