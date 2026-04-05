@@ -131,7 +131,7 @@ def draw_overlay(data, size=(720, 1280)):
 
     # --- PHẦN 3: VẼ FOOTER (THANH DƯỚI CÙNG) ---
     draw.rectangle((0, 1200, 720, 1280), fill=(15, 15, 15, 255)) 
-    draw.text((30, 1225), "Nguồn: Tâm sự 24h - Dữ liệu thị trường thời gian thực", font=f_s, fill=C_SUB)
+    draw.text((30, 1225), "Product by: Tâm sự 24h - Tài chính & Công nghệ", font=f_s, fill=C_SUB)
 
     # Chuyển đổi từ đối tượng ảnh Pillow sang mảng Numpy để FFmpeg/MoviePy đọc được
     return np.array(img)
