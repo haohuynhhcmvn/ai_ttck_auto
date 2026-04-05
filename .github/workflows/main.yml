@@ -2,8 +2,11 @@ name: Auto Video Stock Production
 
 on:
   schedule:
-    # 5. 10:00 UTC (17:00 VN): Tổng kết cuối ngày & Dữ liệu Market Data Pro
-    - cron: "0 10 * * 1-5"
+    # 1. 07:00 VN (00:00 UTC)
+    - cron: "0 0 * * 1-6"
+
+    # 2. 19:00 VN (12:00 UTC)
+    - cron: "0 12 * * 1-6"
     
     # Giữ lại các mốc cũ nếu anh muốn chạy song song:
     # 1. 02:15 UTC (09:15 VN)
