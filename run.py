@@ -19,7 +19,7 @@ try:
     from tts import text_to_speech
     import sub_utils 
     from render import render_video # <-- Hàm đã nâng cấp để vẽ Hook
-    from upload_youtube import upload_video
+    from upload_youtube import upload_video_with_thumbnail
     from telegram import send_message, send_video
     from market_data import get_market_data
     from text_utils import save_text, clean_text_for_tts
