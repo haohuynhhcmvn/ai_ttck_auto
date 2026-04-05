@@ -9,6 +9,7 @@ import random
 import glob
 import uuid
 import textwrap
+import urllib.request
 import unicodedata
 from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
 from PIL import Image, ImageDraw, ImageFont
@@ -21,26 +22,45 @@ except ImportError:
 
 # --- [MỚI]: HÀM VẼ ẢNH HOOK ĐỂ GIỮ CHÂN NGƯỜI XEM ---
 def create_hook_image(hook_text, output_path):
-    """Tạo một tấm ảnh nền đỏ, chữ trắng cực to cho 2.5 giây đầu"""
-    # Fix Unicode: Đưa chữ về dạng chuẩn NFC để chống lỗi ký tự tổ hợp
-    hook_text = unicodedata.normalize('NFC', str(hook_text))
-    
+    """Tạo ảnh nền đỏ chữ trắng. Tự động tải Font nếu thiếu để chống sập Pillow."""
     width, height = 720, 1280
-    img = Image.new("RGB", (width, height), (180, 0, 0)) # Nền đỏ thẫm
+    img = Image.new("RGB", (width, height), (180, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # Cố gắng load font chữ dày
+    # 1. Tạo thư mục chứa font nếu chưa có
+    font_dir = "assets/fonts"
+    os.makedirs(font_dir, exist_ok=True)
+    
+    main_font_path = os.path.join(font_dir, "Roboto-Black.ttf")
+    sub_font_path = os.path.join(font_dir, "Roboto-Medium.ttf")
+    
+    # 2. Tự động tải Font chuẩn từ kho Google Fonts nếu GHA bị thiếu file
+    if not os.path.exists(main_font_path):
+        print("📥 [Pillow]: Không tìm thấy Font, đang tải Roboto-Black...")
+        urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Black.ttf", main_font_path)
+        
+    if not os.path.exists(sub_font_path):
+        print("📥 [Pillow]: Không tìm thấy Font, đang tải Roboto-Medium...")
+        urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Medium.ttf", sub_font_path)
+
+    # 3. Load font và chuẩn hóa text
     try:
-        font = ImageFont.truetype("assets/fonts/Roboto-Black.ttf", 80)
-        sub_font = ImageFont.truetype("assets/fonts/Roboto-Medium.ttf", 40)
-    except:
+        font = ImageFont.truetype(main_font_path, 80)
+        sub_font = ImageFont.truetype(sub_font_path, 40)
+        # Chuẩn hóa Unicode NFC để nét chữ hiển thị mượt nhất
+        text_to_draw = unicodedata.normalize('NFC', str(hook_text))
+    except Exception as e:
+        print(f"⚠️ [CẢNH BÁO]: Tải font thất bại. Kích hoạt chế độ sinh tồn: {e}")
         font = ImageFont.load_default()
         sub_font = ImageFont.load_default()
+        
+        # [QUAN TRỌNG]: Dùng font mặc định thì BẮT BUỘC PHẢI BỎ DẤU tiếng Việt để không bị lỗi latin-1
+        raw_text = unicodedata.normalize('NFKD', str(hook_text))
+        text_to_draw = "".join([c for c in raw_text if not unicodedata.combining(c)])
+        text_to_draw = text_to_draw.replace('Đ', 'D').replace('đ', 'd') # Xử lý riêng chữ Đ
 
-    # Tự động xuống dòng cho Hook nếu quá dài
-    lines = textwrap.wrap(hook_text, width=15)
-    
-    # Vẽ từng dòng chữ Hook
+    # 4. Vẽ chữ (Tự động xuống dòng)
+    lines = textwrap.wrap(text_to_draw, width=15)
     current_h = 500
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -48,15 +68,14 @@ def create_hook_image(hook_text, output_path):
         draw.text(((width - w) / 2, current_h), line, font=font, fill=(255, 255, 255))
         current_h += h + 30
 
-    # Vẽ dòng chữ kêu gọi hành động (CTA)
-    cta_text = "CHI TIẾT TRONG VIDEO 👇"
+    # 5. Vẽ CTA
+    cta_text = "CHI TIET TRONG VIDEO" if font == ImageFont.load_default() else "CHI TIẾT TRONG VIDEO 👇"
     bbox_cta = draw.textbbox((0, 0), cta_text, font=sub_font)
     sw = bbox_cta[2] - bbox_cta[0]
     draw.text(((width - sw) / 2, 1050), cta_text, font=sub_font, fill=(255, 255, 0))
 
     img.save(output_path)
     return output_path
-
 # --- HÀM LẤY NHẠC (GIỮ NGUYÊN) ---
 def get_random_bg_music(music_dir="assets/music"):
     """Quét thư mục và chọn ngẫu nhiên 1 file nhạc mp3/wav"""
