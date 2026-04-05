@@ -159,11 +159,12 @@ def process_video(topic, index):
     try:
         url_fb = upload_video_facebook(
             file_path=video_output,
+            hook_img_path=hook_output, # TRUYỀN THÊM BIẾN NÀY VÀO
             title_str=header_title,
             description_str=social_post
         )
         if url_fb:
-            print(f"   ✅ Upload FB thành công! Link: {url_fb}")
+            print(f"   ✅ Upload FB thành công!")
             send_message(f"📘 **Xem trên Facebook Page:**\n{url_fb}")
     except Exception as e:
         print(f"   ⚠️ Lỗi upload Facebook: {e}")
