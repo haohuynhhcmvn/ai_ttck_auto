@@ -3,7 +3,7 @@ name: Auto Video Stock Production
 on:
   schedule:
     # 1. 07:00 VN (00:00 UTC)
-    - cron: "0 0 * * 1-6"
+    - cron: "30 23 * * 1-6"
 
     # 2. 19:00 VN (12:00 UTC)
     - cron: "0 12 * * 1-6"
