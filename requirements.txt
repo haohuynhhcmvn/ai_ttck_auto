@@ -19,3 +19,4 @@ pytz
 # --- Tự động hóa YouTube (Nếu có) ---
 google-api-python-client
 google-auth-oauthlib
+google-auth-httplib2
