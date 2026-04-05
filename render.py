@@ -288,7 +288,7 @@ def render_video(audio_path, subtitles, output, topic=None, market_data=None, sc
         "-map", "[final_a]",
         "-c:v", "libx264",
         "-preset", "slow",
-        "-crf", "22",
+        "-crf", "28",
         "-c:a", "aac", "-b:a", "128k",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
