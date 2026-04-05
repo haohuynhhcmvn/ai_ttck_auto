@@ -23,6 +23,7 @@ try:
     # MỚI: Import thêm create_hook_image từ render.py để chủ động lấy ảnh làm Thumbnail
     from render import render_video, create_hook_image 
     from upload_youtube import upload_video_with_thumbnail
+    from upload_facebook import upload_video_facebook
     from telegram import send_message, send_video
     from market_data import get_market_data
     from text_utils import save_text, clean_text_for_tts
@@ -153,6 +154,20 @@ def process_video(topic, index):
     except Exception as e:
         print(f"   ⚠️ Lỗi upload YouTube: {e}")
 
+    # --- BƯỚC 11.5: FACEBOOK FANPAGE ---
+    print("1️⃣1️⃣ [FACEBOOK]: Đang đẩy video lên Fanpage...")
+    try:
+        url_fb = upload_video_facebook(
+            file_path=video_output,
+            title_str=header_title,
+            description_str=social_post
+        )
+        if url_fb:
+            print(f"   ✅ Upload FB thành công! Link: {url_fb}")
+            send_message(f"📘 **Xem trên Facebook Page:**\n{url_fb}")
+    except Exception as e:
+        print(f"   ⚠️ Lỗi upload Facebook: {e}")
+        
     # --- BƯỚC 12: DỌN DẸP ---
     print("🧹 [DỌN DẸP]: Đang xóa rác hệ thống...")
     for f in [audio, ass_file, video_output, hook_output]:
