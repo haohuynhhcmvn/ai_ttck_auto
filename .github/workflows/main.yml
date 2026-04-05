@@ -61,6 +61,7 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          YOUTUBE_TOKEN_PICKLE: ${{ secrets.YOUTUBE_TOKEN_PICKLE }}
           # Thêm biến ngày giờ để Python có thể sử dụng nếu cần
           CURRENT_DATE: $(date +'%Y-%m-%d %H:%M:%S')
         run: python run.py
