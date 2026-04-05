@@ -24,7 +24,8 @@ jobs:
     # Thiết lập biến môi trường toàn cục cho Múi giờ
     env:
       TZ: Asia/Ho_Chi_Minh
-
+      PYTHONIOENCODING: utf-8
+      LANG: C.UTF-8
     steps:
       # --- BƯỚC 1: LẤY CODE TỪ REPOSITORY ---
       - name: Checkout Code
