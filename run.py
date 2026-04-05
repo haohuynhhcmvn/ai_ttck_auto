@@ -112,22 +112,30 @@ def process_video(topic, index):
         return
 
     # --- BƯỚC 9 & 10: PHÂN PHỐI ĐA NỀN TẢNG ---
+    # --- BƯỚC 9: TELEGRAM ---
     print("9️⃣ Gửi thông báo tới cộng đồng Telegram...")
+    vn_tz = timezone(timedelta(hours=7))
+    date_str = datetime.now(vn_tz).strftime("%d/%m/%Y")
+    header_title = f"BẢN TIN TÀI CHÍNH 247 - NGÀY {date_str}" # Bỏ 🚨 để cho lên YT cho sạch
+    
     try:
-        vn_tz = timezone(timedelta(hours=7))
-        date_str = datetime.now(vn_tz).strftime("%d/%m/%Y")
-        header_title = f"🚨 BẢN TIN TÀI CHÍNH 247 - NGÀY {date_str}"
-        
-        # Gửi bài đăng social đã được chuẩn hóa thuật ngữ từ Bước 4
-        send_message(f"**{header_title}**\n\n{social_post}")
+        # Gửi Telegram (vẫn giữ icon cho sinh động)
+        send_message(f"🚨 **{header_title}**\n\n{social_post}")
         send_video(output)
     except Exception as e:
         print(f"⚠️ Telegram lỗi: {e}")
 
+    # --- BƯỚC 10: YOUTUBE SHORTS ---
     print("🔟 Uploading to YouTube Shorts...")
     try:
-        url = upload_video(output)
-        if url: send_message(f"📺 Xem trên YouTube: {url}")
+        # TRUYỀN BIẾN ĐỒNG BỘ Ở ĐÂY:
+        url = upload_video(
+            file_path=output, 
+            title_str=header_title, 
+            description_str=social_post
+        )
+        if url: 
+            send_message(f"📺 Xem trên YouTube: {url}")
     except Exception as e:
         print(f"⚠️ YouTube lỗi: {e}")
 
