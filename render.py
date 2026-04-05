@@ -63,40 +63,66 @@ def create_hook_image(hook_text, output_path):
 
 # --- 2. HÀM TẠO SLIDESHOW (Tối ưu RAM cho GHA) ---
 def create_random_slideshow(folder_path, target_duration):
-    """Tạo video nền từ ảnh JPG, nén cực nhanh."""
-    imgs = glob.glob(os.path.join(folder_path, "*.jpg"))
-    if not imgs: return None
+    """
+    Tạo video nền từ ảnh JPG. 
+    Nếu thiếu ảnh: Tự động lặp ngẫu nhiên cho đến khi đủ thời gian.
+    """
+    all_imgs = glob.glob(os.path.join(folder_path, "*.jpg"))
+    if not all_imgs: 
+        print("⚠️ [WARN]: Không tìm thấy ảnh trong assets/picture!")
+        return None
     
-    random.shuffle(imgs)
     clips = []
     total_d = 0
-    
-    # Chỉ lấy tối đa 15 ảnh để tránh tràn RAM 7GB của GHA
-    for p in imgs[:15]:
-        if total_d >= target_duration: break
-        # Resize ảnh về chuẩn 9:16 trước khi tạo clip
-        with Image.open(p) as temp_img:
-            temp_img = temp_img.convert("RGB").resize((720, 1280))
-            tmp_p = f"tmp_{uuid.uuid4().hex[:5]}.jpg"
-            temp_img.save(tmp_p)
-            
-        clip = ImageClip(tmp_p).set_duration(5).set_fps(24).crossfadein(1)
-        clips.append(clip)
-        total_d += 4 # Trừ đi 1s transition
+    used_imgs = []
+
+    # --- LOGIC LẶP NGẪU NHIÊN ---
+    # Chạy vòng lặp cho đến khi tích lũy đủ thời gian yêu cầu
+    while total_d < target_duration + 2: # Cộng dư 2s để cắt cho mượt
+        # Trộn danh sách ảnh để lấy ngẫu nhiên mỗi vòng
+        pool = all_imgs.copy()
+        random.shuffle(pool)
         
+        for p in pool:
+            if total_d >= target_duration + 2: break
+            
+            try:
+                # Tối ưu: Resize ảnh ngay lập tức để tiết kiệm RAM GHA
+                u_id = uuid.uuid4().hex[:5]
+                tmp_p = f"tmp_{u_id}.jpg"
+                with Image.open(p) as img:
+                    img = img.convert("RGB").resize((720, 1280))
+                    img.save(tmp_p)
+                
+                # Tạo clip 5 giây, hiệu ứng mờ dần (crossfade)
+                # padding=-1 trong concatenate sẽ làm các clip đè lên nhau 1s
+                clip = ImageClip(tmp_p).set_duration(5).set_fps(24).crossfadein(1)
+                clips.append(clip)
+                
+                used_imgs.append(tmp_p) # Để tí nữa dọn rác
+                total_d += 4 # Mỗi clip 5s nhưng gối đầu 1s nên thực tế tăng 4s
+            except Exception as e:
+                print(f"❌ Lỗi xử lý ảnh {p}: {e}")
+                continue
+
     if not clips: return None
     
+    # Kết nối các đoạn clip lại với nhau
     final_v = concatenate_videoclips(clips, method="compose", padding=-1)
     temp_name = f"bg_{uuid.uuid4().hex[:5]}.mp4"
+    
+    # Xuất file nền (Sử dụng ultrafast để GHA chạy nhanh nhất)
     final_v.subclip(0, target_duration).write_videofile(
         temp_name, fps=24, codec="libx264", audio=False, 
         logger=None, preset="ultrafast"
     )
     
-    # Dọn dẹp ảnh tạm
-    for f in glob.glob("tmp_*.jpg"): os.remove(f)
+    # --- DỌN RÁC TRIỆT ĐỂ ---
+    for f in used_imgs:
+        if os.path.exists(f): os.remove(f)
+        
     return temp_name
-
+    
 # --- 3. HÀM RENDER TỔNG HỢP (FIX LỖI PIPELINE) ---
 def render_video(audio_path, subtitles, output, topic=None, market_data=None, script=None, video_hook=None, ticker_ass=None):
     """
