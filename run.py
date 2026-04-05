@@ -125,17 +125,22 @@ def process_video(topic, index):
     except Exception as e:
         print(f"⚠️ Telegram lỗi: {e}")
 
-    # --- BƯỚC 10: YOUTUBE SHORTS ---
-    print("🔟 Uploading to YouTube Shorts...")
+    # --- BƯỚC 10: YOUTUBE SHORTS ---   
+    print("🔟 Đang đẩy video lên YouTube Shorts...")
     try:
-        # TRUYỀN BIẾN ĐỒNG BỘ Ở ĐÂY:
-        url = upload_video(
-            file_path=output, 
-            title_str=header_title, 
+        # hook_output: Đây là đường dẫn file ảnh .png mà hàm create_hook_image đã tạo ra
+        # video_output: Đây là đường dẫn file .mp4 sau khi render xong
+        
+        url_youtube = upload_video_with_thumbnail(
+            file_path=video_output,
+            hook_img_path=hook_output, 
+            title_str=header_title,
             description_str=social_post
         )
-        if url: 
-            send_message(f"📺 Xem trên YouTube: {url}")
+        
+        if url_youtube:
+            # Gửi link YouTube ngược lại Telegram để cộng đồng click xem
+            send_message(f"📺 **Bản tin đã có mặt trên YouTube Shorts:**\n{url_youtube}")
     except Exception as e:
         print(f"⚠️ YouTube lỗi: {e}")
 
