@@ -1,9 +1,10 @@
 import os
 import requests
+import time
 
-def upload_video_facebook(file_path, title_str, description_str):
+def upload_video_facebook(file_path, hook_img_path, title_str, description_str):
     """
-    Upload video thẳng lên Facebook Fanpage.
+    Upload video lên Fanpage và ép Facebook dùng ảnh Hook làm Thumbnail.
     """
     page_id = os.getenv("FB_PAGE_ID")
     access_token = os.getenv("FB_PAGE_ACCESS_TOKEN")
@@ -12,41 +13,50 @@ def upload_video_facebook(file_path, title_str, description_str):
         print("   ❌ [FB]: Thiếu biến môi trường FB_PAGE_ID hoặc FB_PAGE_ACCESS_TOKEN!")
         return None
 
-    if not os.path.exists(file_path):
-        print(f"   ❌ [FB]: Không tìm thấy file video: {file_path}")
-        return None
-
-    # Endpoint chuẩn của Meta Graph API để upload video lên Page
-    url = f"https://graph.facebook.com/v19.0/{page_id}/videos"
-
-    # Gắn thêm hashtag chuyên biệt cho FB (FB rất thích hashtag)
-    final_desc = f"{description_str}\n\n#Bantintaichinh247 #Chungkhoan #Cophieu #VNIndex"
-
+    # 1. UPLOAD VIDEO
+    url_video = f"https://graph.facebook.com/v19.0/{page_id}/videos"
     payload = {
-        'title': title_str[:255], # Tiêu đề FB giới hạn 255 ký tự
-        'description': final_desc,
+        'title': title_str[:255],
+        'description': f"{description_str}\n\n#Bantintaichinh247 #Shorts #Stock",
         'access_token': access_token
     }
 
     print(f"🚀 [FB]: Đang tải video lên Fanpage...")
     try:
-        # Upload dạng multipart/form-data
-        with open(file_path, 'rb') as video_file:
-            files = {'source': video_file}
-            response = requests.post(url, data=payload, files=files)
-
-        result = response.json()
+        with open(file_path, 'rb') as f:
+            response = requests.post(url_video, data=payload, files={'source': f})
         
-        # Nếu FB trả về ID tức là thành công
-        if 'id' in result:
-            video_id = result['id']
-            print(f"   ✅ [FB]: Video đã lên sóng! ID: {video_id}")
-            # Trả về link video chuẩn của Facebook
-            return f"https://www.facebook.com/{page_id}/videos/{video_id}"
-        else:
-            print(f"   ❌ [FB]: Mark xoăn báo lỗi: {result}")
+        res_data = response.json()
+        video_id = res_data.get('id')
+
+        if not video_id:
+            print(f"   ❌ [FB]: Lỗi upload video: {res_data}")
             return None
 
+        print(f"   ✅ [FB]: Video đã lên (ID: {video_id}).")
+
+        # 2. UPLOAD THUMBNAIL (Nếu có ảnh Hook)
+        if hook_img_path and os.path.exists(hook_img_path):
+            print(f"🖼️ [FB]: Đang ép Facebook dùng ảnh Hook làm Thumbnail...")
+            # Chờ 5s cho server FB nhận diện video ID
+            time.sleep(5)
+            
+            url_thumb = f"https://graph.facebook.com/v19.0/{video_id}/thumbnails"
+            with open(hook_img_path, 'rb') as img_f:
+                # FB yêu cầu tham số 'is_preferred=True' để chọn làm ảnh chính
+                thumb_res = requests.post(
+                    url_thumb, 
+                    data={'access_token': access_token, 'is_preferred': 'true'}, 
+                    files={'source': img_f}
+                )
+            
+            if thumb_res.json().get('success'):
+                print("   ✅ [FB]: Thumbnail Hook đã được thiết lập!")
+            else:
+                print(f"   ⚠️ [FB]: Không set được Thumbnail: {thumb_res.json()}")
+
+        return f"https://www.facebook.com/{page_id}/videos/{video_id}"
+
     except Exception as e:
-        print(f"   ❌ [FB]: Lỗi sập nguồn khi gọi API: {e}")
+        print(f"   ❌ [FB]: Lỗi hệ thống: {e}")
         return None
