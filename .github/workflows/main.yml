@@ -3,10 +3,10 @@ name: Auto Video Stock Production
 on:
   schedule:
     # 1. 06:30 VN (00:00 UTC)
-    - cron: "30 23 * * 1-6"
+    - cron: "30 23 * * 0-6"
 
     # 2. 19:00 VN (12:00 UTC)
-    - cron: "0 12 * * 1-6"
+    - cron: "0 12 * * 0-6"
     
     # Giữ lại các mốc cũ nếu anh muốn chạy song song:
     # 1. 02:15 UTC (09:15 VN)
